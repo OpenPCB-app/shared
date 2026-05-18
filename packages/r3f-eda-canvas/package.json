@@ -1,6 +1,6 @@
 {
   "name": "@openpcb/r3f-eda-canvas",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React Three Fiber canvas engine for OpenPCB. Coordinates, layers, primitives, scene renderers, preview canvases, camera, interaction, theme. Browser-only.",
   "license": "MIT",
   "type": "module",
@@ -34,9 +34,9 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "three": "^0.180.0",
-    "@react-three/fiber": "^9.0.0",
-    "@react-three/drei": "^10.0.0",
+    "three": ">=0.180.0",
+    "@react-three/fiber": ">=9.0.0",
+    "@react-three/drei": ">=10.0.0",
     "troika-three-text": "*"
   },
   "devDependencies": {
