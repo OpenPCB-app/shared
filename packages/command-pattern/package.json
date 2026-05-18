@@ -1,0 +1,40 @@
+{
+  "name": "@openpcb/command-pattern",
+  "version": "0.1.0",
+  "description": "Generic ECS world + command-sourcing infrastructure for OpenPCB designer-style editors. Pure logic; no DB, no HTTP, no DOM.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test tests",
+    "prepack": "npm run build",
+    "prepare": "npm run build",
+    "dev": "tsc -p tsconfig.build.json --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenPCB-app/shared.git",
+    "directory": "packages/command-pattern"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "typescript": "^5.8.3"
+  }
+}
