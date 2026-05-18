@@ -1,6 +1,6 @@
 {
   "name": "@openpcb/rendering-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Pure render-model builders for OpenPCB schematics + PCBs. IPC-7351B + parametric generators. Zero React/Three deps.",
   "license": "MIT",
   "type": "module",
