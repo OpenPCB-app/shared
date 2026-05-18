@@ -14,6 +14,8 @@ PACKAGES=(
   step-to-glb
   r3f-eda-canvas
   opclib-pack
+  command-pattern
+  contracts
 )
 
 for pkg in "${PACKAGES[@]}"; do
