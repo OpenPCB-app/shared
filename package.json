@@ -1,0 +1,35 @@
+{
+  "name": "@openpcb/kicad-parsers",
+  "version": "0.1.0",
+  "description": "KiCad s-expression, symbol (.kicad_sym), and footprint (.kicad_mod) parsers. Zero runtime dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test tests",
+    "prepack": "npm run build",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenPCB-app/shared.git",
+    "directory": "packages/kicad-parsers"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "typescript": "^5.8.3"
+  }
+}
