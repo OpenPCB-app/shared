@@ -10,7 +10,7 @@ import type {
   GullWingDualParams,
   QfnParams,
   QuadFlatParams,
-} from "./pad-calculator";
+} from "./pad-calculator.js";
 
 // ── Package family identifiers ──────────────────────────────────────
 

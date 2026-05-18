@@ -9,8 +9,8 @@ import type {
   FootprintRenderSource,
   FootprintRenderSourcePad,
   PreviewGraphic,
-} from "../types";
-import type { ParamSchema, ParamValues } from "./param-schema";
+} from "../types.js";
+import type { ParamSchema, ParamValues } from "./param-schema.js";
 
 export const SCREW_TERMINAL_SCHEMA: ParamSchema = {
   fields: [

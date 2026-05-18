@@ -1,10 +1,10 @@
-import { boundsFromPadsAndGraphics } from "./footprint-bounds";
-import { isFiniteBoundsMm, normalizeBounds } from "./geometry";
+import { boundsFromPadsAndGraphics } from "./footprint-bounds.js";
+import { isFiniteBoundsMm, normalizeBounds } from "./geometry.js";
 import type {
   BuildFootprintRenderModelOptions,
   FootprintRenderModel,
   FootprintRenderSource,
-} from "./types";
+} from "./types.js";
 
 function filterByLayer(
   includeLayerNames: readonly string[] | undefined,

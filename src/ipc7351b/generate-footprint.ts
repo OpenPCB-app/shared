@@ -5,23 +5,23 @@
  * that feeds directly into buildFootprintRenderModel().
  */
 
-import { buildFootprintRenderModel } from "../footprint-preview-builder";
-import type { FootprintRenderModel, FootprintRenderSource } from "../types";
-import type { DensityLevel } from "./ipc-dimensions";
+import { buildFootprintRenderModel } from "../footprint-preview-builder.js";
+import type { FootprintRenderModel, FootprintRenderSource } from "../types.js";
+import type { DensityLevel } from "./ipc-dimensions.js";
 import {
   CHIP_ADDITIONS,
   QFN_ADDITIONS,
   QFP_ADDITIONS,
   SOIC_ADDITIONS,
   SOT_ADDITIONS,
-} from "./ipc-dimensions";
+} from "./ipc-dimensions.js";
 import {
   calculateChipPads,
   calculateGullWingDualPads,
   calculateQfnPads,
   calculateQuadFlatPads,
   type PadCalculatorResult,
-} from "./pad-calculator";
+} from "./pad-calculator.js";
 import {
   CHIP_FAMILY,
   QFN_FAMILY,
@@ -29,7 +29,7 @@ import {
   SOIC_FAMILY,
   SOT_FAMILY,
   type PackageFamily,
-} from "./family-presets";
+} from "./family-presets.js";
 
 export interface GeneratedFootprintMetadata {
   readonly name: string;

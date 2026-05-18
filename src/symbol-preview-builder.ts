@@ -5,7 +5,7 @@ import {
   PIN_NUMBER_GAP_MM as DEFAULT_PIN_NUMBER_GAP_MM,
   REFERENCE_OFFSET_MM,
   VALUE_OFFSET_MM,
-} from "./constants";
+} from "./constants.js";
 import {
   boundsFromGraphics,
   emptyBoundsMm,
@@ -14,7 +14,7 @@ import {
   isFiniteBoundsMm,
   normalizeBounds,
   translatePoint,
-} from "./geometry";
+} from "./geometry.js";
 import type {
   BoundsMm,
   BuildSymbolRenderModelOptions,
@@ -24,7 +24,7 @@ import type {
   SymbolRenderModelPin,
   SymbolRenderSource,
   SymbolRenderSourcePin,
-} from "./types";
+} from "./types.js";
 
 const DEFAULT_UNIT_GAP_MM = 2.0;
 const PIN_NAME_GAP_MM = DEFAULT_PIN_NAME_GAP_MM;

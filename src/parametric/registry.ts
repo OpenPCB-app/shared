@@ -10,23 +10,23 @@
  * v1 templates: pin header, screw terminal, mounting hole array.
  */
 
-import type { FootprintRenderSource } from "../types";
-import type { ParamSchema, ParamValues } from "./param-schema";
+import type { FootprintRenderSource } from "../types.js";
+import type { ParamSchema, ParamValues } from "./param-schema.js";
 import {
   PIN_HEADER_SCHEMA,
   generatePinHeader,
   paramsFromValues as pinHeaderParams,
-} from "./pin-header";
+} from "./pin-header.js";
 import {
   MOUNTING_ARRAY_SCHEMA,
   generateMountingArray,
   paramsFromValues as mountingArrayParams,
-} from "./mounting-array";
+} from "./mounting-array.js";
 import {
   SCREW_TERMINAL_SCHEMA,
   generateScrewTerminal,
   paramsFromValues as screwTerminalParams,
-} from "./screw-terminal";
+} from "./screw-terminal.js";
 
 export interface ParametricGeneratorResult {
   readonly source: FootprintRenderSource;

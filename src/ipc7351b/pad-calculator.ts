@@ -10,14 +10,14 @@ import type {
   PreviewGraphic,
   PreviewLabel,
   PreviewRectGraphic,
-} from "../types";
+} from "../types.js";
 import {
   COURTYARD_LINE_WIDTH,
   SILK_LINE_WIDTH,
   SILK_PAD_CLEARANCE,
   type DensityLevel,
   type SolderFilletAdditions,
-} from "./ipc-dimensions";
+} from "./ipc-dimensions.js";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
