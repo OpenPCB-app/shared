@@ -1,6 +1,6 @@
 {
   "name": "@openpcb/step-to-glb",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "STEP file → GLB conversion via occt-import-js WASM running in a Web Worker. Three.js scene construction.",
   "license": "MIT",
   "type": "module",
@@ -11,8 +11,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./worker": "./src/step-to-glb.worker.ts",
-    "./worker.ts": "./src/step-to-glb.worker.ts",
+    "./worker": "./dist/step-to-glb.worker.ts",
+    "./worker.ts": "./dist/step-to-glb.worker.ts",
     "./materials": {
       "types": "./dist/category-materials.d.ts",
       "import": "./dist/category-materials.js"
