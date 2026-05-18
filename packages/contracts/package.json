@@ -1,0 +1,44 @@
+{
+  "name": "@openpcb/contracts",
+  "version": "0.1.0",
+  "description": "Wire-format contracts for OpenPCB modules: library + designer + tasks + assistant SDK types, library import API, AppError hierarchy. Pure types + minimal runtime.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test tests",
+    "prepack": "npm run build",
+    "prepare": "npm run build",
+    "dev": "tsc -p tsconfig.build.json --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenPCB-app/shared.git",
+    "directory": "packages/contracts"
+  },
+  "dependencies": {
+    "@openpcb/command-pattern": "github:OpenPCB-app/shared#command-pattern-v0.1.0",
+    "@openpcb/rendering-core": "github:OpenPCB-app/shared#rendering-core-v0.1.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "typescript": "^5.8.3"
+  }
+}
