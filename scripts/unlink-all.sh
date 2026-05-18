@@ -13,6 +13,7 @@ PACKAGES=(
   kicad-import
   step-to-glb
   r3f-eda-canvas
+  opclib-pack
 )
 
 for pkg in "${PACKAGES[@]}"; do
