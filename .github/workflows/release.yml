@@ -1,0 +1,77 @@
+name: Release package
+# Triggered on per-package tag pushes (`<pkg>-vX.Y.Z`). Subtree-splits the
+# tagged package into a `release/<pkg>-vX.Y.Z` branch (so npm git installs
+# resolve a flat package root), moves the original tag to point at the split
+# commit, then deletes the temporary branch (the tag is the canonical pointer).
+
+on:
+  push:
+    tags:
+      - "kicad-parsers-v*"
+      - "rendering-core-v*"
+      - "kicad-import-v*"
+      - "step-to-glb-v*"
+      - "r3f-eda-canvas-v*"
+      - "opclib-pack-v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (full history for subtree split)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.email "release-bot@openpcb.dev"
+          git config user.name "OpenPCB release bot"
+
+      - name: Parse tag → package + version
+        id: meta
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG##*-v}"
+          PACKAGE="${TAG%-v*}"
+          if [ ! -d "packages/$PACKAGE" ]; then
+            echo "ERROR: packages/$PACKAGE not found for tag $TAG" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_branch=release/$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Subtree split
+        run: |
+          git subtree split \
+            --prefix="packages/${{ steps.meta.outputs.package }}" \
+            -b "${{ steps.meta.outputs.release_branch }}"
+
+      - name: Push release branch
+        run: git push -f origin "${{ steps.meta.outputs.release_branch }}"
+
+      - name: Re-point tag at the subtree-split commit
+        run: |
+          SPLIT_COMMIT="$(git rev-parse "${{ steps.meta.outputs.release_branch }}")"
+          git tag -f "${{ steps.meta.outputs.tag }}" "$SPLIT_COMMIT"
+          git push -f origin "${{ steps.meta.outputs.tag }}"
+
+      - name: Verify install (smoke)
+        run: |
+          mkdir -p /tmp/install-smoke
+          cd /tmp/install-smoke
+          npm init -y >/dev/null
+          npm install "github:${{ github.repository }}#${{ steps.meta.outputs.tag }}" --no-save --silent
+          ls -la "node_modules/@openpcb/${{ steps.meta.outputs.package }}/dist" | head -5
+
+      - name: Summarize
+        run: |
+          echo "## Released" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Package**: \`@openpcb/${{ steps.meta.outputs.package }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Version**: \`${{ steps.meta.outputs.version }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Tag**: \`${{ steps.meta.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Install**: \`github:${{ github.repository }}#${{ steps.meta.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
