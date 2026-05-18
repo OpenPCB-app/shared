@@ -17,8 +17,8 @@ import type {
   FootprintRenderSourcePad,
   PreviewGraphic,
   PreviewLabel,
-} from "../types";
-import type { ParamSchema, ParamValues } from "./param-schema";
+} from "../types.js";
+import type { ParamSchema, ParamValues } from "./param-schema.js";
 
 export const PIN_HEADER_SCHEMA: ParamSchema = {
   fields: [

@@ -5,8 +5,8 @@ import {
   includePoint,
   isFiniteBoundsMm,
   normalizeBounds,
-} from "./geometry";
-import type { BoundsMm, FootprintRenderModel } from "./types";
+} from "./geometry.js";
+import type { BoundsMm, FootprintRenderModel } from "./types.js";
 
 function rotatedPadHalfExtents(
   widthMm: number,

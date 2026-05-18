@@ -1,4 +1,4 @@
-import type { BoundsMm, PointMm, PreviewGraphic, PreviewLabel } from "./types";
+import type { BoundsMm, PointMm, PreviewGraphic, PreviewLabel } from "./types.js";
 
 const TAU = Math.PI * 2;
 const EPSILON = 1e-9;
