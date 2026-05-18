@@ -1,0 +1,48 @@
+{
+  "name": "@openpcb/step-to-glb",
+  "version": "0.1.0",
+  "description": "STEP file → GLB conversion via occt-import-js WASM running in a Web Worker. Three.js scene construction.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./worker": "./src/step-to-glb.worker.ts",
+    "./worker.ts": "./src/step-to-glb.worker.ts",
+    "./materials": {
+      "types": "./dist/category-materials.d.ts",
+      "import": "./dist/category-materials.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && cp src/step-to-glb.worker.ts dist/step-to-glb.worker.ts",
+    "test": "echo 'unit tests run in consumer (browser env required for occt-import-js WASM)'",
+    "prepack": "npm run build",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenPCB-app/shared.git",
+    "directory": "packages/step-to-glb"
+  },
+  "peerDependencies": {
+    "three": "^0.180.0",
+    "occt-import-js": "^0.0.22"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "@types/three": "^0.180.0",
+    "three": "^0.183.0",
+    "occt-import-js": "^0.0.23",
+    "typescript": "^5.8.3"
+  }
+}
