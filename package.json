@@ -12,7 +12,10 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "tsc -b packages/*"
+    "typecheck": "tsc -b packages/*",
+    "dev": "npm run dev --workspaces --if-present",
+    "link:all": "bash scripts/link-all.sh",
+    "unlink:all": "bash scripts/unlink-all.sh"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

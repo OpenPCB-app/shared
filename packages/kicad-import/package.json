@@ -21,7 +21,8 @@
     "build": "tsc -p tsconfig.build.json",
     "test": "bun test src",
     "prepack": "npm run build",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "dev": "tsc -p tsconfig.build.json --watch"
   },
   "repository": {
     "type": "git",
