@@ -10,7 +10,9 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json",
+    "./tests/__fixtures__/*": "./tests/__fixtures__/*"
   },
   "files": [
     "dist",

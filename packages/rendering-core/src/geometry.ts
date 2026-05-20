@@ -32,6 +32,15 @@ export function includePoint(bounds: BoundsMm, point: PointMm): BoundsMm {
   };
 }
 
+function includeBounds(bounds: BoundsMm, next: BoundsMm): BoundsMm {
+  return {
+    minX: Math.min(bounds.minX, next.minX),
+    minY: Math.min(bounds.minY, next.minY),
+    maxX: Math.max(bounds.maxX, next.maxX),
+    maxY: Math.max(bounds.maxY, next.maxY),
+  };
+}
+
 export function expandBounds(bounds: BoundsMm, deltaMm: number): BoundsMm {
   if (deltaMm <= 0) {
     return bounds;
@@ -202,41 +211,46 @@ function includeBezierExtrema(
 
 export function includeGraphic(bounds: BoundsMm, graphic: PreviewGraphic): BoundsMm {
   const strokeHalf = Math.max(graphic.strokeWidthMm, 0) / 2;
+  const primitiveBounds = emptyBoundsMm();
 
   switch (graphic.kind) {
     case "line": {
-      const lineBounds = includePoint(includePoint(bounds, graphic.a), graphic.b);
-      return expandBounds(lineBounds, strokeHalf);
+      const lineBounds = includePoint(
+        includePoint(primitiveBounds, graphic.a),
+        graphic.b,
+      );
+      return includeBounds(bounds, expandBounds(lineBounds, strokeHalf));
     }
     case "rect": {
       const rectBounds: BoundsMm = {
-        minX: Math.min(bounds.minX, graphic.x, graphic.x + graphic.width),
-        minY: Math.min(bounds.minY, graphic.y, graphic.y + graphic.height),
-        maxX: Math.max(bounds.maxX, graphic.x, graphic.x + graphic.width),
-        maxY: Math.max(bounds.maxY, graphic.y, graphic.y + graphic.height),
+        minX: Math.min(graphic.x, graphic.x + graphic.width),
+        minY: Math.min(graphic.y, graphic.y + graphic.height),
+        maxX: Math.max(graphic.x, graphic.x + graphic.width),
+        maxY: Math.max(graphic.y, graphic.y + graphic.height),
       };
-      return expandBounds(rectBounds, strokeHalf);
+      return includeBounds(bounds, expandBounds(rectBounds, strokeHalf));
     }
     case "circle": {
       const circleBounds: BoundsMm = {
-        minX: Math.min(bounds.minX, graphic.center.x - graphic.radiusMm),
-        minY: Math.min(bounds.minY, graphic.center.y - graphic.radiusMm),
-        maxX: Math.max(bounds.maxX, graphic.center.x + graphic.radiusMm),
-        maxY: Math.max(bounds.maxY, graphic.center.y + graphic.radiusMm),
+        minX: graphic.center.x - graphic.radiusMm,
+        minY: graphic.center.y - graphic.radiusMm,
+        maxX: graphic.center.x + graphic.radiusMm,
+        maxY: graphic.center.y + graphic.radiusMm,
       };
-      return expandBounds(circleBounds, strokeHalf);
+      return includeBounds(bounds, expandBounds(circleBounds, strokeHalf));
     }
     case "arc3": {
       const arc = arcCenterFrom3Points(graphic.start, graphic.mid, graphic.end);
       if (!arc) {
-        return expandBounds(
-          includePoint(includePoint(includePoint(bounds, graphic.start), graphic.mid), graphic.end),
-          strokeHalf,
+        const fallbackBounds = includePoint(
+          includePoint(includePoint(primitiveBounds, graphic.start), graphic.mid),
+          graphic.end,
         );
+        return includeBounds(bounds, expandBounds(fallbackBounds, strokeHalf));
       }
 
       let current = includePoint(
-        includePoint(includePoint(bounds, graphic.start), graphic.mid),
+        includePoint(includePoint(primitiveBounds, graphic.start), graphic.mid),
         graphic.end,
       );
 
@@ -251,24 +265,24 @@ export function includeGraphic(bounds: BoundsMm, graphic: PreviewGraphic): Bound
         });
       }
 
-      return expandBounds(current, strokeHalf);
+      return includeBounds(bounds, expandBounds(current, strokeHalf));
     }
     case "polyline": {
-      let current = bounds;
+      let current = primitiveBounds;
       for (const point of graphic.points) {
         current = includePoint(current, point);
       }
-      return expandBounds(current, strokeHalf);
+      return includeBounds(bounds, expandBounds(current, strokeHalf));
     }
     case "bezier": {
       const bezierBounds = includeBezierExtrema(
-        bounds,
+        primitiveBounds,
         graphic.points[0],
         graphic.points[1],
         graphic.points[2],
         graphic.points[3],
       );
-      return expandBounds(bezierBounds, strokeHalf);
+      return includeBounds(bounds, expandBounds(bezierBounds, strokeHalf));
     }
   }
 }

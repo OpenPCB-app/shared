@@ -5,7 +5,7 @@ import {
   findNodes,
   getStringValue,
   getNumberValue,
-} from "./sexpr-parser";
+} from "./sexpr-parser.js";
 
 // ── Types ──────────────────────────────────────────────────────────
 

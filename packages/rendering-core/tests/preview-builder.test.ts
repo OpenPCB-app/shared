@@ -132,6 +132,34 @@ describe("buildFootprintRenderModel", () => {
     expect(model.bounds.maxX).toBeGreaterThan(0);
   });
 
+  test("applies stroke expansion once per graphic", () => {
+    const model = buildFootprintRenderModel({
+      ...source,
+      pads: [],
+      graphics: [
+        {
+          kind: "line",
+          a: { x: 0, y: 0 },
+          b: { x: 1, y: 0 },
+          strokeWidthMm: 0.1,
+          layer: "F.SilkS",
+        },
+        {
+          kind: "line",
+          a: { x: 2, y: 0 },
+          b: { x: 3, y: 0 },
+          strokeWidthMm: 0.1,
+          layer: "F.SilkS",
+        },
+      ],
+    });
+
+    expect(model.bounds).not.toBeNull();
+    if (!model.bounds) return;
+    expect(model.bounds.minX).toBeCloseTo(-0.05, 6);
+    expect(model.bounds.maxX).toBeCloseTo(3.05, 6);
+  });
+
   test("propagates warnings from source", () => {
     const withWarning: FootprintRenderSource = {
       ...source,
