@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import Ajv, { type AnySchema, type ValidateFunction } from "ajv/dist/2020";
+import Ajv, { type AnySchema, type ValidateFunction } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { OpclibValidationError } from "../errors.js";
 
