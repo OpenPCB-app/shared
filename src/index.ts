@@ -7,6 +7,6 @@
  * Used by the OpenPCB library module (KiCad import flow + bundled-component
  * seeding) and by OpenPCB_CoreLibrary's authoring tools.
  */
-export * from "./sexpr-parser";
-export * from "./kicad-symbol-parser";
-export * from "./kicad-footprint-parser";
+export * from "./sexpr-parser.js";
+export * from "./kicad-symbol-parser.js";
+export * from "./kicad-footprint-parser.js";
