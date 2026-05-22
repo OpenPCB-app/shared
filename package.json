@@ -2,7 +2,7 @@
   "name": "@openpcb/kicad-import",
   "version": "0.1.0",
   "description": "Normalize KiCad symbol/footprint files into OpenPCB JSON. Preview models, validation, 3D model classification, family heuristics. Pure.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
