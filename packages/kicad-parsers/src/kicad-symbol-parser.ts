@@ -13,7 +13,7 @@ import {
   getStringValue,
   getNumberValue,
   serializeSexpr,
-} from "./sexpr-parser";
+} from "./sexpr-parser.js";
 
 export interface ParsedKicadSymbol {
   name: string;

@@ -30,7 +30,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 echo ""
-echo "✔ All 5 @openpcb/* packages registered with npm link."
+echo "✔ All 8 @openpcb/* packages registered with npm link."
 echo ""
 echo "Next: from each consumer, run \`npm run shared:link\` (or manually"
 echo "      \`npm link @openpcb/<pkg>\` for each package you want to dev locally)."

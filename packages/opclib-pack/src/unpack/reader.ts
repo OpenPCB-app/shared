@@ -62,8 +62,11 @@ export function unpackOpclib(bytes: Uint8Array): OpclibPackage {
   if (!/^[a-f0-9]{64}$/.test(declared)) {
     throw new OpclibFormatError(`integrity.packageSha256 missing or malformed`);
   }
+  // Strip signature when recomputing: signing happens after digest so the
+  // signature must not perturb the digest.
+  const { signature: _omitSig, ...rest } = manifest;
   const manifestForHash: OpclibManifest = {
-    ...manifest,
+    ...(rest as OpclibManifest),
     integrity: { algorithm: "sha256", packageSha256: "0".repeat(64) },
   };
   const recomputed = sha256Hex(

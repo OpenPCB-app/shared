@@ -2,7 +2,7 @@
   "name": "@openpcb/step-to-glb",
   "version": "0.1.3",
   "description": "STEP file → GLB conversion via occt-import-js WASM running in a Web Worker. Three.js scene construction.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
