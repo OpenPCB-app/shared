@@ -2,7 +2,7 @@
   "name": "@openpcb/kicad-parsers",
   "version": "0.1.2",
   "description": "KiCad s-expression, symbol (.kicad_sym), and footprint (.kicad_mod) parsers. Zero runtime dependencies.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
