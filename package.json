@@ -2,7 +2,7 @@
   "name": "@openpcb/contracts",
   "version": "0.1.0",
   "description": "Wire-format contracts for OpenPCB modules: library + designer + tasks + assistant SDK types, library import API, AppError hierarchy. Pure types + minimal runtime.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
