@@ -2,7 +2,7 @@
   "name": "@openpcb/r3f-eda-canvas",
   "version": "0.1.3",
   "description": "React Three Fiber canvas engine for OpenPCB. Coordinates, layers, primitives, scene renderers, preview canvases, camera, interaction, theme. Browser-only.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
