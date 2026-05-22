@@ -1,8 +1,8 @@
 {
   "name": "@openpcb/opclib-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": ".opclib archive pack + unpack: deterministic manifest digest, JSON Schema validation, ZIP extraction. Pure logic — no DB, no HTTP.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -61,6 +61,17 @@ export {
 } from "./unpack/zip-extractor.js";
 export { readAssetJson, readAssetBytes } from "./unpack/asset-accessor.js";
 
+// Sign / verify
+export {
+  signManifest,
+  verifyManifest,
+  withSignature,
+  type OpclibSignature,
+  type TrustedKeyResolver,
+  type VerifyManifestOptions,
+  type VerifyManifestResult,
+} from "./sign.js";
+
 // Validate
 export {
   validateManifest,
