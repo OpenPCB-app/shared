@@ -7,8 +7,10 @@
  * filesystem walking, and writing the output file. The pure path lives here.
  */
 import { zipSync, type Zippable } from "fflate";
+import type { KeyObject } from "node:crypto";
 import { canonicalize } from "./canonicalize.js";
 import { sha256Bytes } from "./hash.js";
+import { signManifest } from "../sign.js";
 import { assertValidManifest } from "../validate/validator.js";
 import type {
   OpclibLibraryHeader,
@@ -54,6 +56,9 @@ export interface PackOpclibInput {
   /** Optional fields surfaced in the manifest verbatim. */
   templates?: unknown[];
   deprecated?: unknown[];
+  /** Optional Ed25519 signing. When set, the manifest is signed after
+   * `integrity.packageSha256` is computed but before zipping. */
+  sign?: { privateKey: KeyObject | string | Buffer; keyId: string };
 }
 
 export interface PackOpclibResult {
@@ -90,6 +95,14 @@ export function packOpclib(input: PackOpclibInput): PackOpclibResult {
     new TextEncoder().encode(canonicalize(manifest)),
   );
   manifest.integrity.packageSha256 = packageSha256;
+
+  if (input.sign) {
+    manifest.signature = signManifest(
+      manifest,
+      input.sign.privateKey,
+      input.sign.keyId,
+    );
+  }
 
   // Build zip payload: manifest + every referenced file.
   const payload: Zippable = {};

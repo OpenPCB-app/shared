@@ -2,7 +2,7 @@
   "name": "@openpcb/command-pattern",
   "version": "0.1.0",
   "description": "Generic ECS world + command-sourcing infrastructure for OpenPCB designer-style editors. Pure logic; no DB, no HTTP, no DOM.",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
