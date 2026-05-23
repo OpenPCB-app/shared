@@ -104,10 +104,13 @@ const GRAPHIC_TAG_MAP: Record<string, ParsedGraphic["type"]> = {
   fp_text: "text",
 };
 
-function parseXyz(node: SExpr[] | null): { x: number; y: number; z: number } {
-  if (!node) return { x: 0, y: 0, z: 0 };
+function parseXyz(
+  node: SExpr[] | null,
+  fallback: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
+): { x: number; y: number; z: number } {
+  if (!node) return fallback;
   const xyz = findNode(node, "xyz");
-  if (!xyz) return { x: 0, y: 0, z: 0 };
+  if (!xyz) return fallback;
   return {
     x: getNumberValue(xyz, 1) ?? 0,
     y: getNumberValue(xyz, 2) ?? 0,
@@ -438,7 +441,7 @@ export function parseKicadFootprint(source: string): ParsedKicadFootprint {
       path,
       resolvedFileName,
       offset: parseXyz(offsetNode),
-      scale: parseXyz(scaleNode),
+      scale: parseXyz(scaleNode, { x: 1, y: 1, z: 1 }),
       rotation: parseXyz(rotateNode),
     });
   }
