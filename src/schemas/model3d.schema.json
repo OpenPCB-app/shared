@@ -26,6 +26,7 @@
     "boundsMm": {
       "type": "object",
       "required": ["x", "y", "z"],
+      "additionalProperties": false,
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" },
@@ -34,6 +35,8 @@
     },
     "offsetMm": {
       "type": "object",
+      "required": ["x", "y", "z"],
+      "additionalProperties": false,
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" },
@@ -42,17 +45,35 @@
     },
     "rotationDeg": {
       "type": "object",
+      "required": ["x", "y", "z"],
+      "additionalProperties": false,
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" },
         "z": { "type": "number" }
       }
+    },
+    "scaleMm": {
+      "type": "object",
+      "description": "Per-axis scale, applied with offsetMm/rotationDeg in model space. A component value of -1 mirrors that axis (handles KiCad STEPs whose author-time direction is flipped versus the footprint).",
+      "required": ["x", "y", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      }
+    },
+    "transformBaked": {
+      "type": "boolean",
+      "description": "True when offsetMm/rotationDeg/scaleMm were baked into the GLB during packaging and must not be applied again at render time."
     }
   },
   "$defs": {
     "format": {
       "type": "object",
       "required": ["path", "sha256"],
+      "additionalProperties": false,
       "properties": {
         "path": { "type": "string" },
         "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }

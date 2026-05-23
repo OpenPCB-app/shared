@@ -34,7 +34,25 @@ export interface OpclibFootprintEntry extends OpclibAssetEntry {
   models3d?: string[];
 }
 
-export interface OpclibModel3dEntry {
+/**
+ * Per-model author-time corrections, applied at render time in model space
+ * before the per-instance placement transform. Optional — when absent the
+ * model is rendered as authored (identity transform).
+ *
+ * Coordinate convention follows the rest of the package: millimetres for
+ * `offsetMm`, degrees for `rotationDeg` (Euler XYZ), dimensionless scalars
+ * for `scaleMm`. A `scaleMm` component of `-1` mirrors that axis; this is
+ * how we correct KiCad PinHeader STEPs whose pin-row direction is flipped
+ * versus the corresponding footprint.
+ */
+export interface Model3dTransform {
+  offsetMm?: { x: number; y: number; z: number };
+  rotationDeg?: { x: number; y: number; z: number };
+  scaleMm?: { x: number; y: number; z: number };
+  transformBaked?: boolean;
+}
+
+export interface OpclibModel3dEntry extends Model3dTransform {
   id: string;
   uuid: string;
   version: string;
