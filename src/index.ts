@@ -27,3 +27,4 @@ export {
 } from "./step-to-glb.js";
 export { getCategoryMaterial } from "./category-materials.js";
 export { applyCategoryMaterial } from "./apply-category-material.js";
+export { convertStepToGlbNode } from "./node.js";
