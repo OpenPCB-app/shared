@@ -17,6 +17,7 @@ export {
   convertStepToGlb,
   type TessellationParams,
   type Model3DRef,
+  type StepToGlbConversionOptions,
   type StepToGlbRequest,
   type StepToGlbOkResult,
   type StepToGlbErrorResult,

@@ -5,6 +5,7 @@ import { getCategoryMaterial } from "./category-materials.js";
 import type {
   ConversionResult,
   Model3DRef,
+  StepToGlbConversionOptions,
   TessellationParams,
 } from "./step-to-glb.js";
 
@@ -164,6 +165,27 @@ function correctUpAxisIfNeeded(group: THREE.Group): void {
   correction.multiply(group.matrix).decompose(group.position, group.quaternion, group.scale);
 }
 
+function validateFiniteVector(
+  value: { x: number; y: number; z: number },
+  label: string,
+): void {
+  for (const axis of ["x", "y", "z"] as const) {
+    if (!Number.isFinite(value[axis])) {
+      throw new Error(`${label}.${axis} must be a finite number`);
+    }
+  }
+}
+
+function validateModelRef(modelRef: Model3DRef | null | undefined): void {
+  if (!modelRef) return;
+  validateFiniteVector(modelRef.offset, "modelRef.offset");
+  validateFiniteVector(modelRef.rotation, "modelRef.rotation");
+  validateFiniteVector(modelRef.scale, "modelRef.scale");
+  if (modelRef.scale.x === 0 || modelRef.scale.y === 0 || modelRef.scale.z === 0) {
+    throw new Error("modelRef.scale axes must be non-zero");
+  }
+}
+
 function applyModelRefTransform(group: THREE.Group, modelRef: Model3DRef | null | undefined): void {
   if (!modelRef) return;
   const offset = new THREE.Vector3(modelRef.offset.x, modelRef.offset.y, modelRef.offset.z);
@@ -217,6 +239,7 @@ export async function convertStepToGlbNode(
   stepBytes: ArrayBuffer,
   params: TessellationParams = {},
   modelRef?: Model3DRef | null,
+  options: StepToGlbConversionOptions = {},
 ): Promise<ConversionResult> {
   const occt = (await initOcctImportJs()) as OcctImportJsModule;
   const result = occt.ReadStepFile(new Uint8Array(stepBytes), params ?? null);
@@ -225,7 +248,12 @@ export async function convertStepToGlbNode(
   }
 
   const group = buildGroup(result);
-  correctUpAxisIfNeeded(group);
+  try {
+    validateModelRef(modelRef);
+  } catch (error) {
+    return errorResult("invalid_model_ref", error instanceof Error ? error.message : String(error));
+  }
+  if (options.axisCorrection === "bbox-smallest-axis") correctUpAxisIfNeeded(group);
   applyModelRefTransform(group, modelRef);
   const glbBytes = await exportGlb(group);
   if (glbBytes.byteLength > GLB_SIZE_LIMIT_BYTES) {

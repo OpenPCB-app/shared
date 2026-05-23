@@ -13,10 +13,15 @@ export interface Model3DRef {
   rotation: { x: number; y: number; z: number };
 }
 
+export interface StepToGlbConversionOptions {
+  axisCorrection?: "none" | "bbox-smallest-axis";
+}
+
 export interface StepToGlbRequest {
   stepBytes: ArrayBuffer;
   params: TessellationParams;
   modelRef?: Model3DRef | null;
+  options?: StepToGlbConversionOptions;
   timeoutMs?: number;
 }
 
@@ -80,6 +85,7 @@ export async function convertStepToGlb(
   modelRef?: Model3DRef | null,
   signal?: AbortSignal,
   workerFactory: WorkerFactory = createStepToGlbWorker,
+  options: StepToGlbConversionOptions = {},
 ): Promise<ConversionResult> {
   if (signal?.aborted) {
     return errorResult("conversion_timeout", "STEP to GLB conversion was cancelled");
@@ -148,6 +154,7 @@ export async function convertStepToGlb(
       stepBytes: detachArrayBuffer(stepBytes),
       params,
       modelRef,
+      options,
       timeoutMs,
     };
 
