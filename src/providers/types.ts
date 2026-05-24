@@ -68,7 +68,7 @@ export interface AiChatTurnResult {
 export interface AiProviderClient {
   id: string;
   kind: AiProviderKind;
-  capabilities(signal?: AbortSignal): Promise<AiProviderCapabilities>;
+  capabilities(signal?: AbortSignal, model?: string): Promise<AiProviderCapabilities>;
   listModels(signal?: AbortSignal): Promise<AiProviderModel[]>;
   streamChat(input: AiChatRequest): AsyncIterable<AiRunEvent>;
 }

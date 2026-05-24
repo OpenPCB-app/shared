@@ -1,4 +1,5 @@
 import type { AiSourceRef } from "../sources/source-ref.js";
+import type { AiToolCall } from "../tools/types.js";
 
 export type AiRunEventType =
   | "run.started"
@@ -31,7 +32,7 @@ export interface AiRunMessageDeltaEvent extends AiRunEventBase {
 
 export interface AiRunMessageCompletedEvent extends AiRunEventBase {
   type: "run.message.completed";
-  data: { content: string; toolCallCount: number };
+  data: { content: string; toolCallCount: number; toolCalls?: AiToolCall[] };
 }
 
 export interface AiRunToolRequestedEvent extends AiRunEventBase {
