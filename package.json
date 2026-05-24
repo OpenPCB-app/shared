@@ -1,0 +1,40 @@
+{
+  "name": "@openpcb/ai-core",
+  "version": "0.1.0",
+  "description": "Headless AI runtime primitives for OpenPCB ecosystem: providers, tools, context, citations, prompts, and run events. Pure TypeScript; no DB, no HTTP framework, no DOM, no provider SDKs.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test tests",
+    "prepack": "npm run build",
+    "prepare": "npm run build",
+    "dev": "tsc -p tsconfig.build.json --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenPCB-app/shared.git",
+    "directory": "packages/ai-core"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "typescript": "^5.8.3"
+  }
+}
