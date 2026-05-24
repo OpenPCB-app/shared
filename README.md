@@ -4,16 +4,17 @@ Shared libraries for the [OpenPCB](https://github.com/OpenPCB-app) ecosystem. In
 
 ## Packages
 
-| Package                                                | Purpose                                                                   | Latest tag               | Runtime deps                     |
-| ------------------------------------------------------ | ------------------------------------------------------------------------- | ------------------------ | -------------------------------- |
-| [`@openpcb/kicad-parsers`](packages/kicad-parsers)     | `.kicad_sym`, `.kicad_mod`, KiCad s-expression parsers                    | `kicad-parsers-v0.1.2`   | none                             |
-| [`@openpcb/rendering-core`](packages/rendering-core)   | Pure render-model builders, IPC-7351B generator, parametric footprints    | `rendering-core-v0.1.2`  | none                             |
-| [`@openpcb/kicad-import`](packages/kicad-import)       | KiCad → normalized library shape (preview models, validation, heuristics) | `kicad-import-v0.1.0`    | kicad-parsers + core             |
-| [`@openpcb/step-to-glb`](packages/step-to-glb)         | STEP → GLB conversion via occt-import-js (browser worker, Vite-only)      | `step-to-glb-v0.1.3`     | three, occt-import-js            |
-| [`@openpcb/r3f-eda-canvas`](packages/r3f-eda-canvas)   | React Three Fiber canvas engine, primitives, scene renderers              | `r3f-eda-canvas-v0.1.3`  | react, three, r3f, drei          |
-| [`@openpcb/opclib-pack`](packages/opclib-pack)         | `.opclib` archive pack/unpack: canonical JSON digest, ZIP, schemas        | `opclib-pack-v0.1.0`     | ajv, ajv-formats, fflate         |
-| [`@openpcb/command-pattern`](packages/command-pattern) | Generic ECS world + command-sourcing (envelope, history, patch, invert)   | `command-pattern-v0.1.0` | none                             |
-| [`@openpcb/contracts`](packages/contracts)             | Wire-format contracts: SDKs, library import API, AppError hierarchy       | `contracts-v0.1.0`       | command-pattern + rendering-core |
+| Package                                                | Purpose                                                                   | Latest tag               | Runtime deps                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- | ------------------------ | ------------------------------------------ |
+| [`@openpcb/kicad-parsers`](packages/kicad-parsers)     | `.kicad_sym`, `.kicad_mod`, KiCad s-expression parsers                    | `kicad-parsers-v0.1.2`   | none                                       |
+| [`@openpcb/rendering-core`](packages/rendering-core)   | Pure render-model builders, IPC-7351B generator, parametric footprints    | `rendering-core-v0.1.2`  | none                                       |
+| [`@openpcb/kicad-import`](packages/kicad-import)       | KiCad → normalized library shape (preview models, validation, heuristics) | `kicad-import-v0.1.0`    | kicad-parsers + core                       |
+| [`@openpcb/step-to-glb`](packages/step-to-glb)         | STEP → GLB conversion via occt-import-js (browser worker, Vite-only)      | `step-to-glb-v0.1.3`     | three, occt-import-js                      |
+| [`@openpcb/r3f-eda-canvas`](packages/r3f-eda-canvas)   | React Three Fiber canvas engine, primitives, scene renderers              | `r3f-eda-canvas-v0.1.3`  | react, three, r3f, drei                    |
+| [`@openpcb/opclib-pack`](packages/opclib-pack)         | `.opclib` archive pack/unpack: canonical JSON digest, ZIP, schemas        | `opclib-pack-v0.1.0`     | ajv, ajv-formats, fflate                   |
+| [`@openpcb/command-pattern`](packages/command-pattern) | Generic ECS world + command-sourcing (envelope, history, patch, invert)   | `command-pattern-v0.1.0` | none                                       |
+| [`@openpcb/contracts`](packages/contracts)             | Wire-format contracts: SDKs, library import API, AppError hierarchy       | `contracts-v0.2.0`       | command-pattern + rendering-core + ai-core |
+| [`@openpcb/ai-core`](packages/ai-core)                 | Headless AI runtime: provider client, tool registry, run-loop, prompts    | `ai-core-v0.1.0`         | none                                       |
 
 ## Install (consumer)
 
@@ -29,7 +30,8 @@ Each package is published as its own per-package tag on the monorepo. The releas
     "@openpcb/r3f-eda-canvas": "github:OpenPCB-app/shared#r3f-eda-canvas-v0.1.3",
     "@openpcb/opclib-pack": "github:OpenPCB-app/shared#opclib-pack-v0.1.0",
     "@openpcb/command-pattern": "github:OpenPCB-app/shared#command-pattern-v0.1.0",
-    "@openpcb/contracts": "github:OpenPCB-app/shared#contracts-v0.1.0",
+    "@openpcb/contracts": "github:OpenPCB-app/shared#contracts-v0.2.0",
+    "@openpcb/ai-core": "github:OpenPCB-app/shared#ai-core-v0.1.0",
   },
 }
 ```

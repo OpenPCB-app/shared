@@ -16,6 +16,7 @@ PACKAGES=(
   opclib-pack
   command-pattern
   contracts
+  ai-core
 )
 
 for pkg in "${PACKAGES[@]}"; do

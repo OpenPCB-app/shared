@@ -17,6 +17,7 @@ PACKAGES=(
   opclib-pack
   command-pattern
   contracts
+  ai-core
 )
 
 # Ensure dist/ exists for every package before linking; consumers resolve
@@ -30,7 +31,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 echo ""
-echo "✔ All 8 @openpcb/* packages registered with npm link."
+echo "✔ All 9 @openpcb/* packages registered with npm link."
 echo ""
 echo "Next: from each consumer, run \`npm run shared:link\` (or manually"
 echo "      \`npm link @openpcb/<pkg>\` for each package you want to dev locally)."
