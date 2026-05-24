@@ -9,6 +9,7 @@ import type {
   AiSourceRef,
   AiToolStatus,
 } from "@openpcb/ai-core";
+import type { DesignerDispatchResult } from "../designer/types.js";
 
 // Re-exports so consumers can import everything from @openpcb/contracts.
 export type {
@@ -69,6 +70,7 @@ export interface AssistantMessageMetadata {
   ai?: {
     toolCallSummaries?: AssistantToolCallSummary[];
     totalSources?: number;
+    internal?: boolean;
   };
   [key: string]: unknown;
 }
@@ -85,6 +87,12 @@ export interface AssistantMessage {
   metadata: AssistantMessageMetadata | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AssistantMessagesPage {
+  items: AssistantMessage[];
+  hasMore: boolean;
+  nextCursor: string | null;
 }
 
 export interface AssistantContextBindingDto extends AiContextBinding {
@@ -107,6 +115,66 @@ export interface AssistantToolEventDto {
   sources: AiSourceRef[];
   createdAt: string;
   updatedAt: string;
+}
+
+export type AssistantWriteProposalKind = "designer_place_components";
+export type AssistantWriteProposalStatus =
+  | "pending"
+  | "applied"
+  | "rejected"
+  | "failed";
+
+export interface AssistantWriteProposalDto {
+  id: string;
+  chatId: string;
+  toolEventId: string | null;
+  kind: AssistantWriteProposalKind;
+  status: AssistantWriteProposalStatus;
+  designId: string;
+  baseRevision: number | null;
+  proposal: unknown;
+  applyResult: unknown | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssistantPlacementProposalPlacement {
+  componentId: string;
+  componentName: string;
+  positionNm: { x: number; y: number };
+  rotationDeg: 0 | 90 | 180 | 270;
+  mirrored: boolean;
+  value?: string;
+  properties?: Record<string, string>;
+  warnings: string[];
+}
+
+export interface AssistantPlacementProposalSkipped {
+  componentId: string;
+  reason: string;
+}
+
+export interface AssistantPlacementProposal {
+  proposalId: string;
+  status: "pending_approval";
+  design: { id: string; name: string; revision: number };
+  placements: AssistantPlacementProposalPlacement[];
+  skipped: AssistantPlacementProposalSkipped[];
+  requiresPartialConfirmation: boolean;
+}
+
+export interface AssistantPlacementApplyResult {
+  proposalId: string;
+  status: "applied";
+  designId: string;
+  applied: Array<{
+    componentId: string;
+    componentName: string;
+    partId: string | null;
+    revision: number;
+  }>;
+  skipped: AssistantPlacementProposalSkipped[];
+  results: DesignerDispatchResult[];
 }
 
 export interface CreateAssistantChatInput {
@@ -185,7 +253,10 @@ export interface AssistantSDK {
   listChats(): Promise<AssistantChat[]>;
   getChat(chatId: string): Promise<AssistantChat | null>;
   deleteChat(chatId: string): Promise<void>;
-  listMessages(chatId: string): Promise<AssistantMessage[]>;
+  listMessages(
+    chatId: string,
+    options?: { limit?: number; before?: string },
+  ): Promise<AssistantMessagesPage>;
   submitMessage(
     chatId: string,
     input: SubmitAssistantMessageInput,
@@ -201,8 +272,20 @@ export interface AssistantSDK {
   // Tool events
   listToolEvents(
     chatId: string,
-    options?: { messageId?: string },
+    options?: { messageId?: string; messageIds?: string[] },
   ): Promise<AssistantToolEventDto[]>;
+
+  // Write proposals
+  listWriteProposals(chatId: string): Promise<AssistantWriteProposalDto[]>;
+  applyWriteProposal(
+    chatId: string,
+    proposalId: string,
+    input?: { allowPartial?: boolean },
+  ): Promise<AssistantPlacementApplyResult>;
+  rejectWriteProposal(
+    chatId: string,
+    proposalId: string,
+  ): Promise<AssistantWriteProposalDto>;
 
   // Settings
   getSettings(): Promise<AssistantSettings>;
