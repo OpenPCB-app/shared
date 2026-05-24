@@ -28,4 +28,9 @@ export {
 } from "./step-to-glb.js";
 export { getCategoryMaterial } from "./category-materials.js";
 export { applyCategoryMaterial } from "./apply-category-material.js";
-export { convertStepToGlbNode } from "./node.js";
+
+// NOTE: `convertStepToGlbNode` lives at `@openpcb/step-to-glb/node`. It is NOT
+// re-exported here because it does `import initOcctImportJs from "occt-import-js"`,
+// a CJS default import that browser bundlers (Vite) try to follow from the main
+// entry and fail (no default export in browser mode). Node consumers must import
+// it explicitly: `import { convertStepToGlbNode } from "@openpcb/step-to-glb/node";`
