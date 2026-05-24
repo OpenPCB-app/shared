@@ -48,7 +48,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
     });
   }
 
-  async capabilities(signal?: AbortSignal): Promise<AiProviderCapabilities> {
+  async capabilities(signal?: AbortSignal, model?: string): Promise<AiProviderCapabilities> {
     const checkedAt = nowIso();
     let modelList = false;
     let warning: string | undefined;
@@ -61,7 +61,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
     let toolCalling = false;
     let streaming = true;
     try {
-      const probe = await this.probeToolCall(signal);
+      const probe = await this.probeToolCall(signal, model);
       toolCalling = probe.toolCalling;
       streaming = probe.streaming;
       if (probe.warning && !warning) warning = probe.warning;
@@ -240,7 +240,11 @@ export class OpenAiCompatibleClient implements AiProviderClient {
       type: "run.message.completed",
       runId,
       timestamp: nowIso(),
-      data: { content: aggregatedContent, toolCallCount: toolCalls.length },
+      data: {
+        content: aggregatedContent,
+        toolCallCount: toolCalls.length,
+        toolCalls,
+      },
     };
 
     for (const tc of toolCalls) {
@@ -266,6 +270,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
    */
   private async probeToolCall(
     signal?: AbortSignal,
+    model?: string,
   ): Promise<{ toolCalling: boolean; streaming: boolean; warning?: string }> {
     const tools: AiToolDefinition[] = [
       {
@@ -285,7 +290,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
     const body = this.buildRequestBody(
       {
         runId: "probe",
-        model: "",
+        model: model ?? "",
         messages: [
           { role: "user", content: 'Call the echo tool with text "ok".' },
         ],
@@ -294,8 +299,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
       },
       false,
     );
-    // Strip model field so server can use its default; many local servers ignore unknown models.
-    delete (body as { model?: unknown }).model;
+    if (!model) delete (body as { model?: unknown }).model;
     try {
       const response = await this.fetchImpl(
         `${this.baseUrl}/chat/completions`,
