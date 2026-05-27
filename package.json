@@ -1,6 +1,6 @@
 {
   "name": "@openpcb/contracts",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Wire-format contracts for OpenPCB modules: library + designer + tasks + assistant SDK types, library import API, AppError hierarchy. Pure types + minimal runtime.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
