@@ -117,12 +117,81 @@ export interface AssistantToolEventDto {
   updatedAt: string;
 }
 
-export type AssistantWriteProposalKind = "designer_place_components";
+export type AssistantWriteProposalKind =
+  | "designer_place_components"
+  | "designer_schematic_edits"
+  | "designer_schematic_wires"
+  | "designer_schematic_updates"
+  | "designer_schematic_deletions"
+  | (string & {});
 export type AssistantWriteProposalStatus =
   | "pending"
   | "applied"
+  | "partial"
   | "rejected"
   | "failed";
+
+export type AssistantWriteRiskLevel =
+  | "low"
+  | "medium"
+  | "high"
+  | "destructive";
+
+export type AssistantWriteOperationStatus =
+  | "pending"
+  | "applied"
+  | "skipped"
+  | "failed";
+
+export interface AssistantWriteOperation {
+  id: string;
+  kind: string;
+  title: string;
+  summary: string;
+  riskLevel: AssistantWriteRiskLevel;
+  payload: unknown;
+  sources?: AiSourceRef[];
+  warnings?: string[];
+}
+
+export interface AssistantWriteOperationResult {
+  operationId: string;
+  status: AssistantWriteOperationStatus;
+  commandId?: string;
+  revisionBefore?: number | null;
+  revisionAfter?: number;
+  createdEntityId?: string | null;
+  error?: string;
+  result?: unknown;
+}
+
+export interface AssistantWriteApplyResult {
+  proposalId?: string;
+  status: "applied" | "partial" | "failed";
+  designId?: string;
+  appliedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  stoppedAtOperationId?: string;
+  operations: AssistantWriteOperationResult[];
+  message: string;
+}
+
+export interface AssistantWriteProposalEnvelope<TPayload = unknown> {
+  id: string;
+  kind: AssistantWriteProposalKind;
+  toolName: string;
+  title: string;
+  summary: string;
+  riskLevel: AssistantWriteRiskLevel;
+  designId: string | null;
+  baseRevision: number | null;
+  operations: AssistantWriteOperation[];
+  payload: TPayload;
+  sources: AiSourceRef[];
+  warnings: string[];
+  createdByToolCallId?: string;
+}
 
 export interface AssistantWriteProposalDto {
   id: string;
@@ -132,7 +201,15 @@ export interface AssistantWriteProposalDto {
   status: AssistantWriteProposalStatus;
   designId: string;
   baseRevision: number | null;
+  toolName?: string | null;
+  title?: string | null;
+  summary?: string | null;
+  riskLevel?: AssistantWriteRiskLevel | null;
+  operations?: AssistantWriteOperation[];
+  sources?: AiSourceRef[];
+  warnings?: string[];
   proposal: unknown;
+  envelope?: AssistantWriteProposalEnvelope | null;
   applyResult: unknown | null;
   createdAt: string;
   updatedAt: string;
@@ -281,7 +358,7 @@ export interface AssistantSDK {
     chatId: string,
     proposalId: string,
     input?: { allowPartial?: boolean },
-  ): Promise<AssistantPlacementApplyResult>;
+  ): Promise<AssistantPlacementApplyResult | AssistantWriteApplyResult>;
   rejectWriteProposal(
     chatId: string,
     proposalId: string,
