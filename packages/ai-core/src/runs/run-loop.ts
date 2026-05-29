@@ -59,6 +59,7 @@ export async function* runChat(
     const turnToolCalls: AiToolCall[] = [];
     let turnFailed = false;
     let turnFailMessage: string | undefined;
+    let turnFinishReason: string | undefined;
 
     for await (const event of input.client.streamChat({
       runId,
@@ -77,6 +78,7 @@ export async function* runChat(
           yield stamped;
           break;
         case "run.message.completed":
+          turnFinishReason = stamped.data.finishReason;
           yield stamped;
           break;
         case "run.tool.requested":
@@ -248,7 +250,19 @@ export async function* runChat(
 
     // No tool calls; commit final assistant message and finish.
     input.messages.push({ role: "assistant", content: assistantContent });
-    finishReason = "stop";
+    finishReason = turnFinishReason ?? "stop";
+    if (finishReason === "length") {
+      yield {
+        type: "run.warning",
+        runId,
+        timestamp: nowIso(),
+        data: {
+          code: "truncated",
+          message:
+            "Response truncated (finish_reason=length); increase max output tokens.",
+        },
+      };
+    }
     yield {
       type: "run.completed",
       runId,

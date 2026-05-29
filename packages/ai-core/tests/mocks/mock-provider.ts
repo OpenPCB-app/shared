@@ -20,6 +20,7 @@ export type MockScriptStep =
 export interface MockTurn {
   steps: MockScriptStep[];
   finishReason?: string;
+  reasoning?: string;
 }
 
 export class MockProviderClient implements AiProviderClient {
@@ -76,7 +77,12 @@ export class MockProviderClient implements AiProviderClient {
       type: "run.message.completed",
       runId,
       timestamp: nowIso(),
-      data: { content, toolCallCount: toolCount },
+      data: {
+        content,
+        toolCallCount: toolCount,
+        reasoningContent: turn.reasoning,
+        finishReason: turn.finishReason,
+      },
     };
     for (const step of turn.steps) {
       if (step.kind === "tool_call") {

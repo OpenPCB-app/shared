@@ -32,7 +32,15 @@ export interface AiRunMessageDeltaEvent extends AiRunEventBase {
 
 export interface AiRunMessageCompletedEvent extends AiRunEventBase {
   type: "run.message.completed";
-  data: { content: string; toolCallCount: number; toolCalls?: AiToolCall[] };
+  data: {
+    content: string;
+    toolCallCount: number;
+    toolCalls?: AiToolCall[];
+    /** Chain-of-thought from reasoning models (OpenAI `reasoning_content`). */
+    reasoningContent?: string;
+    /** Raw provider finish_reason for this turn (e.g. "stop", "length", "tool_calls"). */
+    finishReason?: string;
+  };
 }
 
 export interface AiRunToolRequestedEvent extends AiRunEventBase {
