@@ -48,7 +48,10 @@ export class OpenAiCompatibleClient implements AiProviderClient {
     });
   }
 
-  async capabilities(signal?: AbortSignal, model?: string): Promise<AiProviderCapabilities> {
+  async capabilities(
+    signal?: AbortSignal,
+    model?: string,
+  ): Promise<AiProviderCapabilities> {
     const checkedAt = nowIso();
     let modelList = false;
     let warning: string | undefined;
@@ -163,6 +166,8 @@ export class OpenAiCompatibleClient implements AiProviderClient {
     }
 
     let aggregatedContent = "";
+    let aggregatedReasoning = "";
+    let droppedSseLines = 0;
     const toolCallAccumulators = new Map<number, ToolCallAccumulator>();
     let finishReason: string | undefined;
 
@@ -172,6 +177,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
         try {
           event = JSON.parse(line.data) as OpenAiStreamChunk;
         } catch {
+          droppedSseLines += 1;
           continue;
         }
         const choice = event.choices?.[0];
@@ -185,6 +191,12 @@ export class OpenAiCompatibleClient implements AiProviderClient {
             timestamp: nowIso(),
             data: { delta: delta.content },
           };
+        }
+        // Reasoning models emit chain-of-thought into a separate field; accumulate it
+        // (do NOT merge into the visible answer) so empty-content turns can surface it.
+        const reasoningDelta = delta.reasoning_content ?? delta.reasoning;
+        if (typeof reasoningDelta === "string" && reasoningDelta.length > 0) {
+          aggregatedReasoning += reasoningDelta;
         }
         if (delta.tool_calls) {
           for (const tcDelta of delta.tool_calls) {
@@ -236,6 +248,24 @@ export class OpenAiCompatibleClient implements AiProviderClient {
       }))
       .filter((tc) => tc.name.length > 0);
 
+    // Surface malformed-SSE drops only when they likely cost us the answer, to avoid
+    // noise on healthy streams.
+    if (
+      droppedSseLines > 0 &&
+      aggregatedContent.length === 0 &&
+      toolCalls.length === 0
+    ) {
+      yield {
+        type: "run.warning",
+        runId,
+        timestamp: nowIso(),
+        data: {
+          code: "sse_parse",
+          message: `Dropped ${droppedSseLines} malformed SSE line(s); response may be incomplete.`,
+        },
+      };
+    }
+
     yield {
       type: "run.message.completed",
       runId,
@@ -244,6 +274,8 @@ export class OpenAiCompatibleClient implements AiProviderClient {
         content: aggregatedContent,
         toolCallCount: toolCalls.length,
         toolCalls,
+        reasoningContent: aggregatedReasoning || undefined,
+        finishReason,
       },
     };
 
@@ -259,14 +291,13 @@ export class OpenAiCompatibleClient implements AiProviderClient {
         },
       };
     }
-
-    // Stash finishReason on the last requested event by returning out; the run-loop owns run.completed.
-    void finishReason;
   }
 
   /**
    * Probe whether the provider supports tool-calling by sending a tiny tool-enabled completion.
-   * Returns toolCalling=true on a 2xx response with valid SSE/JSON; false otherwise (no throw).
+   * Returns toolCalling=true on a 2xx response that emits a tool_call. Truncated probes
+   * (finish_reason "length" with no tool_call) are treated as INCONCLUSIVE → toolCalling=true,
+   * so reasoning models (which spend the budget on reasoning_content) are never hard-disabled.
    */
   private async probeToolCall(
     signal?: AbortSignal,
@@ -295,7 +326,9 @@ export class OpenAiCompatibleClient implements AiProviderClient {
           { role: "user", content: 'Call the echo tool with text "ok".' },
         ],
         tools,
-        maxOutputTokens: 16,
+        // Reasoning models spend the first tokens on reasoning_content; a tiny budget
+        // (was 16) truncates before any tool_call and falsely reports no tool support.
+        maxOutputTokens: 256,
       },
       false,
     );
@@ -321,11 +354,27 @@ export class OpenAiCompatibleClient implements AiProviderClient {
         };
       }
       const json = (await response.json()) as {
-        choices?: Array<{ message?: { tool_calls?: unknown[] } }>;
+        choices?: Array<{
+          message?: { tool_calls?: unknown[] };
+          finish_reason?: string;
+        }>;
       };
-      const toolCalls = json.choices?.[0]?.message?.tool_calls;
+      const choice = json.choices?.[0];
+      const toolCalls = choice?.message?.tool_calls;
+      const hasToolCalls = Array.isArray(toolCalls) && toolCalls.length > 0;
+      // Truncation is inconclusive, not a negative: don't poison the capability cache.
+      const truncated = choice?.finish_reason === "length";
+      if (hasToolCalls) return { toolCalling: true, streaming: true };
+      if (truncated) {
+        return {
+          toolCalling: true,
+          streaming: true,
+          warning:
+            "Tool-call probe truncated (finish_reason=length); assuming tools are supported.",
+        };
+      }
       return {
-        toolCalling: Array.isArray(toolCalls) && toolCalls.length > 0,
+        toolCalling: false,
         streaming: true,
       };
     } catch (err) {
@@ -396,6 +445,10 @@ interface OpenAiStreamChunk {
     delta?: {
       content?: string;
       role?: string;
+      /** Reasoning-model chain-of-thought (vLLM/oMLX/DeepSeek style). */
+      reasoning_content?: string;
+      /** Alternate field name used by some providers. */
+      reasoning?: string;
       tool_calls?: Array<{
         index?: number;
         id?: string;

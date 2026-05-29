@@ -1,0 +1,157 @@
+import { describe, expect, it } from "bun:test";
+import { OpenAiCompatibleClient } from "../src/providers/openai-compatible.js";
+import type { AiRunEvent } from "../src/runs/events.js";
+
+function sseResponse(chunks: unknown[]): Response {
+  const enc = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const c of chunks)
+        controller.enqueue(enc.encode(`data: ${JSON.stringify(c)}\n\n`));
+      controller.enqueue(enc.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": "text/event-stream" },
+  });
+}
+
+function sseRawResponse(dataLines: string[]): Response {
+  const enc = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const line of dataLines)
+        controller.enqueue(enc.encode(`data: ${line}\n\n`));
+      controller.enqueue(enc.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": "text/event-stream" },
+  });
+}
+
+function jsonResponse(obj: unknown): Response {
+  return new Response(JSON.stringify(obj), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function makeClient(fetchImpl: typeof fetch): OpenAiCompatibleClient {
+  return new OpenAiCompatibleClient({
+    id: "test",
+    kind: "openai-compatible",
+    baseUrl: "http://localhost:9/v1",
+    fetchImpl,
+  });
+}
+
+async function collectStream(
+  client: OpenAiCompatibleClient,
+): Promise<AiRunEvent[]> {
+  const out: AiRunEvent[] = [];
+  for await (const e of client.streamChat({
+    runId: "r",
+    model: "m",
+    messages: [{ role: "user", content: "hi" }],
+  }))
+    out.push(e);
+  return out;
+}
+
+describe("OpenAiCompatibleClient.streamChat", () => {
+  it("captures reasoning_content into the completed event without merging into content", async () => {
+    const client = makeClient((async () =>
+      sseResponse([
+        { choices: [{ delta: { reasoning_content: "thinking" } }] },
+        { choices: [{ delta: { reasoning_content: " harder" } }] },
+        { choices: [{ delta: {}, finish_reason: "stop" }] },
+      ])) as unknown as typeof fetch);
+    const events = await collectStream(client);
+    const completed = events.find((e) => e.type === "run.message.completed") as
+      | (AiRunEvent & {
+          data: {
+            content: string;
+            reasoningContent?: string;
+            finishReason?: string;
+          };
+        })
+      | undefined;
+    expect(completed).toBeDefined();
+    expect(completed!.data.content).toBe("");
+    expect(completed!.data.reasoningContent).toBe("thinking harder");
+    expect(completed!.data.finishReason).toBe("stop");
+    // Reasoning is NOT streamed as visible deltas.
+    expect(events.filter((e) => e.type === "run.message.delta").length).toBe(0);
+  });
+
+  it("keeps content and reasoning separate", async () => {
+    const client = makeClient((async () =>
+      sseResponse([
+        { choices: [{ delta: { reasoning_content: "cot" } }] },
+        { choices: [{ delta: { content: "answer" } }] },
+        { choices: [{ delta: {}, finish_reason: "stop" }] },
+      ])) as unknown as typeof fetch);
+    const events = await collectStream(client);
+    const completed = events.find((e) => e.type === "run.message.completed") as
+      | (AiRunEvent & {
+          data: { content: string; reasoningContent?: string };
+        })
+      | undefined;
+    expect(completed!.data.content).toBe("answer");
+    expect(completed!.data.reasoningContent).toBe("cot");
+  });
+
+  it("warns when malformed SSE lines drop the entire answer", async () => {
+    const client = makeClient((async () =>
+      sseRawResponse([
+        "{not valid json",
+        "{also bad",
+      ])) as unknown as typeof fetch);
+    const events = await collectStream(client);
+    const warning = events.find(
+      (e) =>
+        e.type === "run.warning" &&
+        (e as { data: { code: string } }).data.code === "sse_parse",
+    );
+    expect(warning).toBeDefined();
+  });
+});
+
+describe("OpenAiCompatibleClient capability probe", () => {
+  function routedFetch(probeJson: unknown): typeof fetch {
+    return (async (url: string | URL) => {
+      if (String(url).endsWith("/models"))
+        return jsonResponse({ data: [{ id: "m" }] });
+      return jsonResponse(probeJson);
+    }) as unknown as typeof fetch;
+  }
+
+  it("reports toolCalling=true when the probe returns a tool_call", async () => {
+    const client = makeClient(
+      routedFetch({ choices: [{ message: { tool_calls: [{ id: "c" }] } }] }),
+    );
+    const caps = await client.capabilities();
+    expect(caps.toolCalling).toBe(true);
+  });
+
+  it("treats finish_reason=length as inconclusive (does NOT disable tools)", async () => {
+    const client = makeClient(
+      routedFetch({ choices: [{ message: {}, finish_reason: "length" }] }),
+    );
+    const caps = await client.capabilities();
+    expect(caps.toolCalling).toBe(true);
+  });
+
+  it("reports toolCalling=false on a clean stop with no tool_call", async () => {
+    const client = makeClient(
+      routedFetch({ choices: [{ message: {}, finish_reason: "stop" }] }),
+    );
+    const caps = await client.capabilities();
+    expect(caps.toolCalling).toBe(false);
+  });
+});

@@ -119,6 +119,50 @@ describe("runChat", () => {
     expect(events.find((e) => e.type === "run.completed")).toBeDefined();
   });
 
+  it("emits a truncated warning and accurate finishReason on finish_reason=length", async () => {
+    const client = new MockProviderClient();
+    client.setScript([
+      {
+        steps: [{ kind: "text", content: "partial answer" }],
+        finishReason: "length",
+      },
+    ]);
+    const events = await collect({
+      client,
+      registry: new AiToolRegistry(),
+      model: "m",
+      messages: [{ role: "user", content: "hi" }],
+      limits: resolveToolLimits({ preference: "small" }),
+    });
+    const warnings = events.filter((e) => e.type === "run.warning");
+    expect(
+      warnings.some(
+        (w) => (w as { data: { code: string } }).data.code === "truncated",
+      ),
+    ).toBe(true);
+    const completed = events.find((e) => e.type === "run.completed");
+    expect(
+      (completed as { data: { finishReason?: string } }).data.finishReason,
+    ).toBe("length");
+  });
+
+  it("defaults finishReason to stop when the provider omits it", async () => {
+    const client = new MockProviderClient();
+    client.setScript([{ steps: [{ kind: "text", content: "done" }] }]);
+    const events = await collect({
+      client,
+      registry: new AiToolRegistry(),
+      model: "m",
+      messages: [{ role: "user", content: "hi" }],
+      limits: resolveToolLimits({ preference: "small" }),
+    });
+    const completed = events.find((e) => e.type === "run.completed");
+    expect(
+      (completed as { data: { finishReason?: string } }).data.finishReason,
+    ).toBe("stop");
+    expect(events.some((e) => e.type === "run.warning")).toBe(false);
+  });
+
   it("respects maxToolIterations", async () => {
     const client = new MockProviderClient();
     client.setScript([
