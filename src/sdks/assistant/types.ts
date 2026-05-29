@@ -71,6 +71,12 @@ export interface AssistantMessageMetadata {
     toolCallSummaries?: AssistantToolCallSummary[];
     totalSources?: number;
     internal?: boolean;
+    /** Chain-of-thought from reasoning models; surfaced in a collapsed disclosure. */
+    reasoning?: string;
+    /** The turn finished with finish_reason=length (answer may be cut off). */
+    truncated?: boolean;
+    /** The run completed with no visible answer (drives the retry affordance). */
+    emptyResponse?: boolean;
   };
   [key: string]: unknown;
 }
@@ -131,11 +137,7 @@ export type AssistantWriteProposalStatus =
   | "rejected"
   | "failed";
 
-export type AssistantWriteRiskLevel =
-  | "low"
-  | "medium"
-  | "high"
-  | "destructive";
+export type AssistantWriteRiskLevel = "low" | "medium" | "high" | "destructive";
 
 export type AssistantWriteOperationStatus =
   | "pending"
