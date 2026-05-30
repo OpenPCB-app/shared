@@ -3,6 +3,7 @@ import type { AiToolCall, AiToolDefinition } from "../tools/types.js";
 
 export type AiProviderKind =
   | "openai"
+  | "openrouter"
   | "openai-compatible"
   | "lmstudio"
   | "omlx";
@@ -68,7 +69,10 @@ export interface AiChatTurnResult {
 export interface AiProviderClient {
   id: string;
   kind: AiProviderKind;
-  capabilities(signal?: AbortSignal, model?: string): Promise<AiProviderCapabilities>;
+  capabilities(
+    signal?: AbortSignal,
+    model?: string,
+  ): Promise<AiProviderCapabilities>;
   listModels(signal?: AbortSignal): Promise<AiProviderModel[]>;
   streamChat(input: AiChatRequest): AsyncIterable<AiRunEvent>;
 }

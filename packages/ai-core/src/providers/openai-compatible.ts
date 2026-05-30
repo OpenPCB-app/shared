@@ -430,6 +430,11 @@ export class OpenAiCompatibleClient implements AiProviderClient {
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = { accept: "application/json" };
     if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
+    if (this.kind === "openrouter") {
+      // Optional attribution headers for OpenRouter's app leaderboard (no-op elsewhere).
+      headers["HTTP-Referer"] = "https://openpcb.app";
+      headers["X-Title"] = "OpenPCB";
+    }
     return headers;
   }
 }
