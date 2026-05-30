@@ -26,6 +26,16 @@ export const AI_PROVIDER_PRESETS: readonly AiProviderPreset[] = Object.freeze([
     notes: "Cloud provider. Requires an API key.",
   },
   {
+    kind: "openrouter",
+    label: "OpenRouter",
+    defaultBaseUrl: "https://openrouter.ai/api/v1",
+    defaultModel: "anthropic/claude-3.5-sonnet",
+    requiresApiKey: true,
+    docsUrl: "https://openrouter.ai/docs",
+    notes:
+      "Cloud aggregator routing to many model providers via one OpenAI-compatible API. Requires an API key from openrouter.ai/keys. Models use vendor/model slugs (e.g. anthropic/claude-3.5-sonnet).",
+  },
+  {
     kind: "lmstudio",
     label: "LM Studio",
     defaultBaseUrl: "http://127.0.0.1:1234/v1",
