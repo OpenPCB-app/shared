@@ -6,9 +6,15 @@ import {
 } from "../src/providers/presets.js";
 
 describe("provider presets", () => {
-  it("exposes all 4 kinds", () => {
+  it("exposes all 5 kinds", () => {
     const kinds = AI_PROVIDER_PRESETS.map((p) => p.kind).sort();
-    expect(kinds).toEqual(["lmstudio", "omlx", "openai", "openai-compatible"]);
+    expect(kinds).toEqual([
+      "lmstudio",
+      "omlx",
+      "openai",
+      "openai-compatible",
+      "openrouter",
+    ]);
   });
 
   it("openai requires API key", () => {

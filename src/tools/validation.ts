@@ -1,3 +1,4 @@
+import Ajv, { type ValidateFunction, type ErrorObject } from "ajv";
 import type { AiJsonSchemaObject } from "../json-schema.js";
 
 export interface AiValidationError {
@@ -5,6 +6,12 @@ export interface AiValidationError {
   message: string;
 }
 
+/**
+ * Hand-rolled structural validator kept for existing callers/tests. Validates
+ * `type`, required properties, nested properties, and array items. Does NOT
+ * cover `oneOf`/`enum`/`maxLength`/`additionalProperties` — use
+ * {@link validateToolInput} (Ajv) for full JSON-Schema coverage.
+ */
 export function validateAgainstSchema(
   value: unknown,
   schema: AiJsonSchemaObject,
@@ -84,6 +91,79 @@ function matchesType(value: unknown, type: string): boolean {
 
 function joinPath(base: string, key: string): string {
   return base ? `${base}.${key}` : key;
+}
+
+export type ValidationError = { path: string; message: string };
+
+/**
+ * Shared Ajv instance for {@link validateToolInput}. `strict: false` because tool
+ * inputSchemas are authored loosely (extra/unknown keywords tolerated);
+ * `allErrors: true` so every problem is surfaced at once.
+ */
+const ajv = new Ajv({ allErrors: true, strict: false });
+
+/**
+ * Compiled-validator cache keyed by the schema object identity. Tool inputSchemas
+ * are stable references (defined once per tool), so a WeakMap keeps validators
+ * alive without leaking and avoids recompiling on every call.
+ */
+const schemaCache = new WeakMap<object, ValidateFunction>();
+
+function getValidator(schema: object): ValidateFunction {
+  const cached = schemaCache.get(schema);
+  if (cached) return cached;
+  const validate = ajv.compile(schema);
+  schemaCache.set(schema, validate);
+  return validate;
+}
+
+/**
+ * Map one Ajv error to `{ path, message }`. Path prefers `instancePath` (the data
+ * location), falls back to `schemaPath`, and strips the leading slash so paths
+ * read like `source` not `/source`. For `additionalProperties` the offending key
+ * is appended (Ajv reports it via params, not the path).
+ */
+export function mapAjvError(err: ErrorObject): ValidationError {
+  const raw = err.instancePath || err.schemaPath || "";
+  const path = raw.replace(/^\//, "");
+  const extra =
+    err.keyword === "additionalProperties" &&
+    typeof err.params.additionalProperty === "string"
+      ? ` (${err.params.additionalProperty})`
+      : "";
+  return { path, message: `${err.message ?? "invalid"}${extra}` };
+}
+
+/**
+ * Validate already-parsed tool arguments against a JSON Schema using Ajv.
+ * Supports the full draft-07 core (`oneOf`, `enum`, `maxLength`,
+ * `additionalProperties`, …) that the hand-rolled {@link validateAgainstSchema}
+ * cannot. Returns `[]` when valid, else `{ path, message }[]`.
+ */
+export function validateToolInput(
+  schema: unknown,
+  args: unknown,
+): ValidationError[] {
+  if (typeof schema !== "object" || schema === null) {
+    // No usable schema → nothing to validate against.
+    return [];
+  }
+  const validate = getValidator(schema);
+  const valid = validate(args);
+  if (valid) return [];
+  return (validate.errors ?? []).map(mapAjvError);
+}
+
+/**
+ * Map the errors of an already-run Ajv {@link ValidateFunction} to
+ * `{ path, message }[]`. Returns `[]` when there are none. Lets callers that
+ * own a precompiled validator (e.g. {@link AiToolRegistry}) reuse the same
+ * error-mapping logic as {@link validateToolInput} instead of duplicating it.
+ */
+export function mapValidatorErrors(
+  validate: ValidateFunction,
+): ValidationError[] {
+  return (validate.errors ?? []).map(mapAjvError);
 }
 
 export function parseToolArguments(

@@ -47,7 +47,26 @@ export interface AiToolResult<T = unknown> {
   warnings: string[];
   truncated: boolean;
   limits: AiToolLimits;
+  /** Slim object the model should see instead of `data` (Track A/D). `data` stays for UI. */
+  modelData?: unknown;
+  /** One-line status the model should see (Track A/D). */
+  summary?: string;
+  /** Tool-reported status; distinguishes a partial apply from a clean success (Track A/D). */
+  status?: "ok" | "partial";
 }
+
+/**
+ * Balanced model-facing envelope (Wave 0 §0.2). `data` carries `modelData` when present,
+ * else the trimmed `data`.
+ */
+export type AiToolEnvelope = {
+  ok: boolean;
+  status: "ok" | "error" | "partial";
+  summary?: string;
+  warnings: string[];
+  truncated: boolean;
+  data: unknown;
+};
 
 export interface AiTool<TInput = unknown, TOutput = unknown> {
   definition: AiToolDefinition;

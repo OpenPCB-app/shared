@@ -66,6 +66,12 @@ export interface AiRunToolSucceededEvent extends AiRunEventBase {
     sources: AiSourceRef[];
     truncated: boolean;
     warnings: string[];
+    /** Tool-reported status (Track A/D). Distinguishes a partial apply from a clean success. */
+    status?: "ok" | "partial";
+    /** Short human/model-facing line summarising the result (Track A/D). */
+    summary?: string;
+    /** Slim payload fed to the model (Wave 0 §0.2). Full payload stays in `resultJson` for UI. */
+    modelResultJson?: string;
   };
 }
 
@@ -76,12 +82,33 @@ export interface AiRunToolFailedEvent extends AiRunEventBase {
     toolName: string;
     errorMessage: string;
     errorCode?: string;
+    /**
+     * #3: when a tool RAN and reported failure (esp. status:"partial"), the
+     * balanced model envelope is carried here so consumers persist/replay it
+     * faithfully instead of a generic error. Absent for pre-execution failures
+     * (tool_missing/bad_args/schema_invalid/cap/cancelled) and exec throws.
+     */
+    modelResultJson?: string;
+    status?: "error" | "partial";
   };
 }
 
+/**
+ * Known `run.warning` codes. `code` stays an open string (the field type is `string`)
+ * for forward-compat; this union documents the recognised values. Existing emitted code:
+ * `tool_call_cap`. The P6 codes (`duplicate_loop` | `stall` | `tool_cap` | `timeout`) are
+ * declared now but not emitted this iteration.
+ */
+export type AiRunWarningCode =
+  | "tool_call_cap"
+  | "duplicate_loop"
+  | "stall"
+  | "tool_cap"
+  | "timeout";
+
 export interface AiRunWarningEvent extends AiRunEventBase {
   type: "run.warning";
-  data: { code: string; message: string };
+  data: { code: AiRunWarningCode | (string & {}); message: string };
 }
 
 export interface AiRunCompletedEvent extends AiRunEventBase {

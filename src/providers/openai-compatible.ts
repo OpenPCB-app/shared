@@ -119,12 +119,7 @@ export class OpenAiCompatibleClient implements AiProviderClient {
 
     let response: Response;
     try {
-      response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { ...this.buildHeaders(), "content-type": "application/json" },
-        body: JSON.stringify(body),
-        signal: input.signal,
-      });
+      response = await this.postChatCompletions(body, input.signal);
     } catch (err) {
       if (input.signal?.aborted) {
         yield {
@@ -266,6 +261,22 @@ export class OpenAiCompatibleClient implements AiProviderClient {
       };
     }
 
+    // finish_reason=tool_calls but no reconstructable call (truncated/garbled tool
+    // block) would otherwise read as an empty success. Warn so the loop doesn't
+    // silently end an iteration with nothing to act on.
+    if (finishReason === "tool_calls" && toolCalls.length === 0) {
+      yield {
+        type: "run.warning",
+        runId,
+        timestamp: nowIso(),
+        data: {
+          code: "tool_call_cap",
+          message:
+            "Provider reported finish_reason=tool_calls but emitted no usable tool call.",
+        },
+      };
+    }
+
     yield {
       type: "run.message.completed",
       runId,
@@ -291,6 +302,45 @@ export class OpenAiCompatibleClient implements AiProviderClient {
         },
       };
     }
+  }
+
+  /**
+   * POST /chat/completions with a `max_completion_tokens` fallback. Newer servers
+   * (and some proxies) reject the legacy `max_tokens` field with a 400; when the body
+   * mentions it, retry once translating `max_tokens` → `max_completion_tokens`.
+   */
+  private async postChatCompletions(
+    body: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<Response> {
+    const send = (b: Record<string, unknown>): Promise<Response> =>
+      this.fetchImpl(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { ...this.buildHeaders(), "content-type": "application/json" },
+        body: JSON.stringify(b),
+        signal,
+      });
+
+    const response = await send(body);
+    if (
+      response.ok ||
+      response.status !== 400 ||
+      !("max_tokens" in body) ||
+      "max_completion_tokens" in body
+    ) {
+      return response;
+    }
+    const detail = await safeBody(response);
+    if (!/max_tokens|max_completion_tokens/i.test(detail)) {
+      // Unrelated 400; rebuild a response so the caller can still read the body.
+      return new Response(detail, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    }
+    const { max_tokens, ...rest } = body;
+    return send({ ...rest, max_completion_tokens: max_tokens });
   }
 
   /**

@@ -3,9 +3,17 @@ import type { AiChatMessage, AiProviderClient } from "../providers/types.js";
 import type { AiToolRegistry } from "../tools/registry.js";
 import type { AiContextBinding } from "../context/bindings.js";
 import type { AiToolLimits } from "../tools/limits.js";
-import type { AiTool, AiToolCall, AiToolResult } from "../tools/types.js";
+import type {
+  AiTool,
+  AiToolCall,
+  AiToolEnvelope,
+  AiToolResult,
+} from "../tools/types.js";
 import type { AiRunEvent } from "./events.js";
-import { parseToolArguments } from "../tools/validation.js";
+import {
+  parseToolArguments,
+  type ValidationError,
+} from "../tools/validation.js";
 
 export interface RunChatInput {
   client: AiProviderClient;
@@ -55,11 +63,20 @@ export async function* runChat(
       return;
     }
 
-    const turnContent: string[] = [];
-    const turnToolCalls: AiToolCall[] = [];
+    // Deltas are display-only; the turn's authoritative content + tool calls come
+    // from run.message.completed (so non-streaming providers that emit a single
+    // completed event are handled). run.tool.requested events are a fallback for
+    // providers/mocks that don't echo toolCalls into the completed payload.
+    let deltaContent = "";
+    let completedContent: string | undefined;
+    let completedToolCalls: AiToolCall[] | undefined;
+    const requestedToolCalls: AiToolCall[] = [];
     let turnFailed = false;
-    let turnFailMessage: string | undefined;
     let turnFinishReason: string | undefined;
+    // #4: the real provider emits the "finish_reason=tool_calls, no usable call"
+    // warning during streaming; track it so the final-block fallback doesn't
+    // re-emit a duplicate (while still covering providers/mocks that don't).
+    let sawNoToolCallWarning = false;
 
     for await (const event of input.client.streamChat({
       runId,
@@ -74,15 +91,19 @@ export async function* runChat(
       const stamped = { ...event, runId } as AiRunEvent;
       switch (stamped.type) {
         case "run.message.delta":
-          turnContent.push(stamped.data.delta);
+          deltaContent += stamped.data.delta;
           yield stamped;
           break;
         case "run.message.completed":
+          completedContent = stamped.data.content;
+          if (stamped.data.toolCalls && stamped.data.toolCalls.length > 0) {
+            completedToolCalls = stamped.data.toolCalls;
+          }
           turnFinishReason = stamped.data.finishReason;
           yield stamped;
           break;
         case "run.tool.requested":
-          turnToolCalls.push({
+          requestedToolCalls.push({
             id: stamped.data.toolCallId,
             name: stamped.data.toolName,
             argumentsJson: stamped.data.argumentsJson,
@@ -90,8 +111,8 @@ export async function* runChat(
           yield stamped;
           break;
         case "run.failed":
+          // The provider already emitted run.failed; record it and don't re-emit.
           turnFailed = true;
-          turnFailMessage = stamped.data.errorMessage;
           yield stamped;
           break;
         case "run.cancelled":
@@ -100,28 +121,30 @@ export async function* runChat(
         case "run.started":
           if (iteration === 1) yield stamped;
           break;
+        case "run.warning":
+          if (stamped.data.code === "tool_call_cap")
+            sawNoToolCallWarning = true;
+          yield stamped;
+          break;
         default:
           yield stamped;
       }
     }
 
     if (turnFailed) {
-      yield {
-        type: "run.failed",
-        runId,
-        timestamp: nowIso(),
-        data: { errorMessage: turnFailMessage ?? "Provider failed" },
-      };
+      // Provider already yielded run.failed during the stream — don't double-emit.
       return;
     }
 
-    const assistantContent = turnContent.join("");
+    const assistantContent = completedContent ?? deltaContent;
+    const turnToolCalls = completedToolCalls ?? requestedToolCalls;
 
     // If the assistant produced tool calls, append the assistant message with tool_calls
     // and execute each tool, appending role:'tool' messages with tool_call_id.
     if (turnToolCalls.length > 0) {
       const limitedToolCalls = turnToolCalls.slice(0, maxCallsPerIter);
-      if (turnToolCalls.length > maxCallsPerIter) {
+      const skippedToolCalls = turnToolCalls.slice(maxCallsPerIter);
+      if (skippedToolCalls.length > 0) {
         yield {
           type: "run.warning",
           runId,
@@ -132,13 +155,51 @@ export async function* runChat(
           },
         };
       }
+      // The assistant message must list EVERY tool call it will answer (Chat
+      // Completions rejects orphan tool_call_ids). Include ALL turnToolCalls here;
+      // execute only the capped subset and emit a terminal tool message for each
+      // skipped call below, so every tool_call_id has both an assistant entry and
+      // a tool response.
       input.messages.push({
         role: "assistant",
         content: assistantContent,
-        toolCalls: limitedToolCalls,
+        toolCalls: turnToolCalls,
       });
 
+      // On cancellation mid-loop, every tool call already listed in the
+      // assistant message (limited + skipped) must still receive a tool
+      // response, or replayed history carries orphan tool_call_ids that the
+      // provider rejects on the next turn. This emits a cancelled failure for
+      // every call at/after `current` that hasn't been answered yet.
+      const balanceCancelled = function* (
+        current: AiToolCall,
+      ): Generator<AiRunEvent, void, unknown> {
+        const fromIdx = limitedToolCalls.indexOf(current);
+        for (const rem of [
+          ...limitedToolCalls.slice(fromIdx),
+          ...skippedToolCalls,
+        ])
+          yield* failTool(
+            runId,
+            input.messages,
+            rem,
+            "Run cancelled before this tool produced a result.",
+            "cancelled",
+          );
+      };
+
       for (const tc of limitedToolCalls) {
+        // Abort race: stop before starting a tool if cancellation arrived.
+        if (input.signal?.aborted) {
+          yield* balanceCancelled(tc);
+          yield {
+            type: "run.cancelled",
+            runId,
+            timestamp: nowIso(),
+            data: { reason: "aborted" },
+          };
+          return;
+        }
         yield {
           type: "run.tool.running",
           runId,
@@ -148,45 +209,27 @@ export async function* runChat(
         const tool = input.registry.get(tc.name);
         if (!tool) {
           const err = `Tool not registered: ${tc.name}`;
-          yield {
-            type: "run.tool.failed",
-            runId,
-            timestamp: nowIso(),
-            data: {
-              toolCallId: tc.id,
-              toolName: tc.name,
-              errorMessage: err,
-              errorCode: "tool_missing",
-            },
-          };
-          input.messages.push({
-            role: "tool",
-            content: JSON.stringify({ ok: false, error: err }),
-            toolCallId: tc.id,
-            name: tc.name,
-          });
+          yield* failTool(runId, input.messages, tc, err, "tool_missing");
           continue;
         }
         const parsed = parseToolArguments(tc.argumentsJson);
         if (!parsed.ok) {
           const err = `Invalid arguments JSON: ${parsed.error}`;
-          yield {
-            type: "run.tool.failed",
-            runId,
-            timestamp: nowIso(),
-            data: {
-              toolCallId: tc.id,
-              toolName: tc.name,
-              errorMessage: err,
-              errorCode: "bad_args",
-            },
-          };
-          input.messages.push({
-            role: "tool",
-            content: JSON.stringify({ ok: false, error: err }),
-            toolCallId: tc.id,
-            name: tc.name,
-          });
+          yield* failTool(runId, input.messages, tc, err, "bad_args");
+          continue;
+        }
+        const args = parsed.value;
+
+        // Validate against the tool's input schema BEFORE executing (Track B's Ajv
+        // validator, precompiled at registration → full draft-07 coverage). On
+        // errors, fail with an actionable message and feed it back; do not execute.
+        const schemaErrors: ValidationError[] = input.registry.validateInput(
+          tc.name,
+          args,
+        );
+        if (schemaErrors.length > 0) {
+          const err = describeValidationErrors(tc.name, schemaErrors);
+          yield* failTool(runId, input.messages, tc, err, "schema_invalid");
           continue;
         }
 
@@ -201,10 +244,22 @@ export async function* runChat(
             signal: input.signal,
             metadata: { toolEventId: newToolEventId() },
           },
-          parsed.value,
+          args,
         );
 
-        if (result.ok) {
+        // NOTE: do NOT abort here. This tool has already executed — its side
+        // effects (e.g. an applied write) are real, so its result MUST be
+        // emitted/persisted below; otherwise replayed history would say
+        // "cancelled" while the design changed, causing a duplicate on retry. A
+        // pending cancellation is caught at the next loop-top check (which
+        // balances the remaining un-answered calls) and the outer-iteration
+        // abort check — neither of which discards this completed result.
+
+        // Branch on the tool's OWN ok, not just the executor wrapper: a tool that
+        // returns { ok: false } is a failure even though it didn't throw.
+        if (result.ok && result.value.ok) {
+          const envelope = buildEnvelope(result.value);
+          const modelResultJson = JSON.stringify(envelope);
           yield {
             type: "run.tool.succeeded",
             runId,
@@ -216,15 +271,26 @@ export async function* runChat(
               sources: result.value.sources,
               truncated: result.value.truncated,
               warnings: result.value.warnings,
+              status: envelope.status === "partial" ? "partial" : "ok",
+              summary: result.value.summary,
+              modelResultJson,
             },
           };
+          // Feed the model the balanced envelope, not the raw data.
           input.messages.push({
             role: "tool",
-            content: JSON.stringify(result.value.data),
+            content: modelResultJson,
             toolCallId: tc.id,
             name: tc.name,
           });
-        } else {
+        } else if (result.ok && !result.value.ok) {
+          // Tool ran but reported failure: emit failed + feed an error envelope.
+          const envelope = buildEnvelope(result.value);
+          const errorMessage =
+            result.value.summary ??
+            (result.value.warnings.length > 0
+              ? result.value.warnings.join("; ")
+              : `Tool ${tc.name} reported failure`);
           yield {
             type: "run.tool.failed",
             runId,
@@ -232,17 +298,52 @@ export async function* runChat(
             data: {
               toolCallId: tc.id,
               toolName: tc.name,
-              errorMessage: result.error,
-              errorCode: "exec_failed",
+              errorMessage,
+              errorCode: "tool_failed",
+              // #3: carry the balanced envelope (preserves status:"partial" +
+              // modelData) so run-service persists/replays it faithfully.
+              status: envelope.status === "partial" ? "partial" : "error",
+              modelResultJson: JSON.stringify(envelope),
             },
           };
           input.messages.push({
             role: "tool",
-            content: JSON.stringify({ ok: false, error: result.error }),
+            content: JSON.stringify(envelope),
             toolCallId: tc.id,
             name: tc.name,
           });
+        } else if (!result.ok) {
+          yield* failTool(
+            runId,
+            input.messages,
+            tc,
+            result.error,
+            "exec_failed",
+          );
         }
+      }
+
+      // Every capped/skipped call still needs a terminal event so no tool_call_id
+      // is left dangling (and the message history stays balanced for the provider).
+      for (const tc of skippedToolCalls) {
+        const err = `Skipped: exceeded maxToolCallsPerIteration=${maxCallsPerIter}.`;
+        yield {
+          type: "run.tool.failed",
+          runId,
+          timestamp: nowIso(),
+          data: {
+            toolCallId: tc.id,
+            toolName: tc.name,
+            errorMessage: err,
+            errorCode: "tool_call_cap",
+          },
+        };
+        input.messages.push({
+          role: "tool",
+          content: JSON.stringify(errorEnvelope("tool_call_cap", err)),
+          toolCallId: tc.id,
+          name: tc.name,
+        });
       }
       // Loop again so the model can react to tool results.
       continue;
@@ -251,6 +352,20 @@ export async function* runChat(
     // No tool calls; commit final assistant message and finish.
     input.messages.push({ role: "assistant", content: assistantContent });
     finishReason = turnFinishReason ?? "stop";
+    // #4: surface finish_reason="tool_calls" with no reconstructable call — but
+    // only if the provider didn't already emit it during streaming (dedup).
+    if (finishReason === "tool_calls" && !sawNoToolCallWarning) {
+      yield {
+        type: "run.warning",
+        runId,
+        timestamp: nowIso(),
+        data: {
+          code: "tool_call_cap",
+          message:
+            "Provider reported finish_reason=tool_calls but emitted no usable tool call.",
+        },
+      };
+    }
     if (finishReason === "length") {
       yield {
         type: "run.warning",
@@ -289,7 +404,80 @@ export async function* runChat(
   };
 }
 
-async function executeToolSafely<TInput, TOutput>(
+/** Emit a run.tool.failed event and append the matching error tool message. */
+function* failTool(
+  runId: string,
+  messages: AiChatMessage[],
+  tc: AiToolCall,
+  errorMessage: string,
+  errorCode: string,
+): Generator<AiRunEvent, void, unknown> {
+  yield {
+    type: "run.tool.failed",
+    runId,
+    timestamp: nowIso(),
+    data: { toolCallId: tc.id, toolName: tc.name, errorMessage, errorCode },
+  };
+  messages.push({
+    role: "tool",
+    content: JSON.stringify(errorEnvelope(errorCode, errorMessage)),
+    toolCallId: tc.id,
+    name: tc.name,
+  });
+}
+
+/**
+ * Build the Wave-0 balanced error envelope (§0.2) fed to the model on a failure
+ * path (tool missing / bad JSON / schema_invalid / exec_failed / cap). The
+ * structured `data.errorCode`/`errorMessage` lets the model react precisely.
+ */
+function errorEnvelope(
+  errorCode: string,
+  errorMessage: string,
+): AiToolEnvelope {
+  return {
+    ok: false,
+    status: "error",
+    summary: errorMessage,
+    warnings: [],
+    truncated: false,
+    data: { errorCode, errorMessage },
+  };
+}
+
+/** Turn schema validation errors into an actionable, model-facing message. */
+function describeValidationErrors(
+  toolName: string,
+  errors: ValidationError[],
+): string {
+  const detail = errors
+    .map((e) => (e.path ? `${e.path}: ${e.message}` : e.message))
+    .join("; ");
+  return `Invalid arguments for ${toolName}: ${detail}. Fix the arguments and call again.`;
+}
+
+/**
+ * Build the balanced model-facing envelope (Wave 0 §0.2) from a tool result.
+ * `data` carries `modelData` when present, else the full `data`. The full payload
+ * stays in the success event's `resultJson` for UI/persistence.
+ */
+function buildEnvelope(result: AiToolResult<unknown>): AiToolEnvelope {
+  // A tool that reports status:"partial" keeps "partial" even when ok:false
+  // (a partial apply is not a hard error — F5b). Only ok:false WITHOUT a partial
+  // status maps to "error".
+  const status: AiToolEnvelope["status"] =
+    result.status === "partial" ? "partial" : result.ok ? "ok" : "error";
+  return {
+    ok: result.ok,
+    status,
+    summary: result.summary,
+    warnings: result.warnings,
+    truncated: result.truncated,
+    data: result.modelData ?? result.data,
+  };
+}
+
+async function executeToolSafely(
   tool: AiTool<unknown, unknown>,
   ctx: Parameters<AiTool["execute"]>[0],
   input: unknown,
@@ -305,6 +493,4 @@ async function executeToolSafely<TInput, TOutput>(
       error: err instanceof Error ? err.message : String(err),
     };
   }
-  void (null as unknown as TInput);
-  void (null as unknown as TOutput);
 }
