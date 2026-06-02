@@ -63,9 +63,13 @@ function createPinLabels(
   sourcePin?: SymbolRenderSourcePin,
 ): PreviewLabel[] {
   const side = rotationToSide(pin.rotationDeg);
+  const horizontal = side === "left" || side === "right";
   const out: PreviewLabel[] = [];
 
-  if (pin.name.trim().length > 0) {
+  // PIN NAME — inside the body, along the pin axis, reading from the body edge
+  // inward. KiCad uses "~" as the empty-name marker; never draw it.
+  const name = pin.name.trim();
+  if (name.length > 0 && name !== "~") {
     const nameAt =
       side === "left"
         ? { x: pin.bodyEnd.x + PIN_NAME_GAP_MM, y: pin.bodyEnd.y }
@@ -80,31 +84,48 @@ function createPinLabels(
       text: pin.name,
       at: nameAt,
       fontSizeMm: sourcePin?.nameFontSizeMm ?? KLC_TEXT_SIZE_MM,
-      rotationDeg: 0,
-      anchorX: side === "left" ? "left" : side === "right" ? "right" : "center",
+      // Vertical pins read bottom-to-top so the name runs along the wire.
+      rotationDeg: horizontal ? 0 : 90,
+      anchorX:
+        side === "left"
+          ? "left"
+          : side === "right"
+            ? "right"
+            : side === "top"
+              ? "left"
+              : "right",
       anchorY: "middle",
       role: "pin-name",
     });
   }
 
-  if (pin.number && pin.number.trim().length > 0) {
-    const numberAt =
-      side === "left"
-        ? { x: pin.anchor.x - PIN_NUMBER_GAP_MM, y: pin.anchor.y }
-        : side === "right"
-          ? { x: pin.anchor.x + PIN_NUMBER_GAP_MM, y: pin.anchor.y }
-          : side === "top"
-            ? { x: pin.anchor.x, y: pin.anchor.y + PIN_NUMBER_GAP_MM }
-            : { x: pin.anchor.x, y: pin.anchor.y - PIN_NUMBER_GAP_MM };
+  // PIN NUMBER — above the wire, PERPENDICULAR to it, centred near the wire
+  // midpoint. Keeping it off-axis guarantees it never lands on the pin NAME
+  // (the old layout placed both inline at the same gap and they collided).
+  const number = pin.number?.trim();
+  if (number && number.length > 0) {
+    // Position along the wire from the body-edge end toward the tip, then offset
+    // perpendicular. Horizontal pins read the number at mid-wire. Vertical pins
+    // carry a rotated NAME that runs ALONG the wire (tall), so push the number
+    // out toward the tip to clear it (fixes GND/VCC name⨯number; very long names
+    // on short pins like NE555 CONT can still touch — a genuine space limit).
+    const t = horizontal ? 0.5 : 0.92;
+    const np = {
+      x: pin.bodyEnd.x + (pin.anchor.x - pin.bodyEnd.x) * t,
+      y: pin.bodyEnd.y + (pin.anchor.y - pin.bodyEnd.y) * t,
+    };
+    const numberAt = horizontal
+      ? { x: np.x, y: np.y + PIN_NUMBER_GAP_MM }
+      : { x: np.x + PIN_NUMBER_GAP_MM, y: np.y };
 
     out.push({
       id: `${pin.id}:number`,
-      text: pin.number,
+      text: number,
       at: numberAt,
       fontSizeMm: sourcePin?.numberFontSizeMm ?? KLC_TEXT_SIZE_MM,
-      rotationDeg: 0,
-      anchorX: side === "left" ? "right" : side === "right" ? "left" : "center",
-      anchorY: "middle",
+      rotationDeg: horizontal ? 0 : 90,
+      anchorX: "center",
+      anchorY: horizontal ? "bottom" : "middle",
       role: "pin-number",
     });
   }

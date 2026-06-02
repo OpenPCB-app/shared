@@ -477,10 +477,17 @@ export function buildSymbolPreviewFromParsed(
       number !== null
         ? `u${pin.unit}:${number}`
         : `u${pin.unit}:idx${index + 1}`;
+    // Honour KiCad visibility: symbol-level `(pin_names hide)` / `(pin_numbers
+    // hide)` and per-pin name/number hide. Diodes, LEDs and connectors hide
+    // pin names by convention — drawing them produced the K⨯A / Pin_1⨯Pin_2
+    // overlaps. Hidden name → empty (the renderer skips empty/`~`); hidden
+    // number → null (id keeps the real number for pin-mapping).
+    const nameHidden = symbol.hidePinNames || pin.nameHidden;
+    const numberHidden = symbol.hidePinNumbers || pin.numberHidden;
     return {
       id,
-      name: pin.name,
-      number,
+      name: nameHidden ? "" : pin.name,
+      number: numberHidden ? null : number,
       electricalType: pin.electricalType,
       positionMm: {
         x: pin.position.x,
@@ -552,8 +559,11 @@ export function buildSymbolPreviewFromParsed(
     valueFontSizeMm: symbol.valueFontSizeMm,
   };
 
+  // Preview shows a single representative unit (unit 1, standard body style).
+  // Composing every unit at a preserved origin stacked all gates on top of each
+  // other; multi-unit parts (74HC00, LM358) are placed per-unit in the schematic.
   const model = buildSymbolRenderModel(source, {
-    composeAllUnits: true,
+    composeAllUnits: false,
     includeHiddenPins: false,
     preserveOrigin: true,
   });

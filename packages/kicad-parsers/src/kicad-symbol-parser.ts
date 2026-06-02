@@ -28,10 +28,25 @@ export interface ParsedKicadSymbol {
   referenceFontSizeMm?: number;
   /** Font size (mm) of the symbol's `Value` property, when present. */
   valueFontSizeMm?: number;
+  /**
+   * Symbol-level `(pin_names (offset N))` — distance (mm) pin NAMES are placed
+   * inside the body from the pin's body-edge endpoint. KiCad default is 0.508.
+   */
+  pinNameOffsetMm: number;
+  /** Symbol-level `(pin_names hide)` — hide every pin name. */
+  hidePinNames: boolean;
+  /** Symbol-level `(pin_numbers hide)` — hide every pin number. */
+  hidePinNumbers: boolean;
 }
 
 export interface ParsedBodyGraphic {
   unit: number;
+  /**
+   * Body style ("convert" / DeMorgan): 0 = common to all styles, 1 = standard,
+   * 2 = DeMorgan alternative. Renderers should draw style 0 + the selected style
+   * (default 1) only — drawing 1 and 2 together is what stacks two bodies.
+   */
+  convert: number;
   node: SExpr[];
 }
 
@@ -44,7 +59,13 @@ export interface ParsedPin {
   length: number;
   rotation: number;
   unit: number;
+  /** Body style — see {@link ParsedBodyGraphic.convert}. */
+  convert: number;
   hidden: boolean;
+  /** True when the pin NAME carries its own `(name ... (effects ... hide))`. */
+  nameHidden: boolean;
+  /** True when the pin NUMBER carries its own `(number ... (effects ... hide))`. */
+  numberHidden: boolean;
   /** Font size (mm) for the pin name label, when the source provided one. */
   nameFontSizeMm?: number;
   /** Font size (mm) for the pin number label, when the source provided one. */
@@ -166,14 +187,19 @@ function parseSymbol(node: SExpr[]): ParsedKicadSymbol {
 
   for (const sub of subSymbols) {
     const subName = getStringValue(sub) ?? "";
+    // Sub-symbol name is "<symbol>_<unit>_<convert>"; convert (DeMorgan body
+    // style) is the trailing group. We render only the standard style — drawing
+    // the DeMorgan alternative on top is what stacks two bodies/pin-sets.
     const unitMatch = subName.match(/_(\d+)_(\d+)$/);
     const unit = unitMatch ? parseInt(unitMatch[1]!, 10) : 0;
+    const convert = unitMatch ? parseInt(unitMatch[2]!, 10) : 0;
+    if (convert >= 2) continue; // skip DeMorgan alternative body style
     unitSet.add(unit);
 
     // Parse pins
     const pinNodes = findNodes(sub, "pin");
     for (const pin of pinNodes) {
-      const parsed = parsePin(pin, unit);
+      const parsed = parsePin(pin, unit, convert);
       if (parsed) pins.push(parsed);
     }
 
@@ -184,14 +210,14 @@ function parseSymbol(node: SExpr[]): ParsedKicadSymbol {
       if (typeof tag !== "string") continue;
 
       if (KNOWN_GRAPHIC_TYPES.has(tag)) {
-        bodyGraphics.push({ unit, node: child });
+        bodyGraphics.push({ unit, convert, node: child });
       } else if (tag !== "pin" && tag !== "symbol") {
         // Unknown graphic element
         warnings.push({
           code: "unsupported_construct",
           message: `Unknown graphic element "${tag}" in sub-symbol`,
         });
-        bodyGraphics.push({ unit, node: child }); // preserve it
+        bodyGraphics.push({ unit, convert, node: child }); // preserve it
       }
     }
   }
@@ -199,6 +225,19 @@ function parseSymbol(node: SExpr[]): ParsedKicadSymbol {
   // Filter out unit 0 (shared graphics) from unit count
   const signalUnits = [...unitSet].filter((u) => u > 0);
   const units = signalUnits.length > 0 ? Math.max(...signalUnits) : 1;
+
+  // Symbol-level pin-name/number directives: `(pin_names (offset N) hide)` and
+  // `(pin_numbers hide)`. Offset is the distance pin names sit inside the body.
+  const pinNamesNode = findNode(node, "pin_names");
+  const pinNumbersNode = findNode(node, "pin_numbers");
+  const offsetNode = pinNamesNode ? findNode(pinNamesNode, "offset") : null;
+  const parsedOffset = offsetNode ? getNumberValue(offsetNode) : null;
+  const pinNameOffsetMm =
+    parsedOffset !== null && Number.isFinite(parsedOffset)
+      ? parsedOffset
+      : 0.508;
+  const hidePinNames = pinNamesNode ? sexprHasHide(pinNamesNode) : false;
+  const hidePinNumbers = pinNumbersNode ? sexprHasHide(pinNumbersNode) : false;
 
   return {
     name,
@@ -211,10 +250,35 @@ function parseSymbol(node: SExpr[]): ParsedKicadSymbol {
     rawSource: serializeSexpr(node),
     referenceFontSizeMm,
     valueFontSizeMm,
+    pinNameOffsetMm,
+    hidePinNames,
+    hidePinNumbers,
   };
 }
 
-function parsePin(node: SExpr[], unit: number): ParsedPin | null {
+/** True when a node carries a `hide` flag, either `(hide yes)` or bare `hide`. */
+function sexprHasHide(node: SExpr[]): boolean {
+  const hideNode = findNode(node, "hide");
+  if (hideNode) return (getStringValue(hideNode) ?? "yes") !== "no";
+  return node.includes("hide");
+}
+
+/** True when a `(name|number ... (effects ... hide))` block hides that label. */
+function effectsHidden(parent: SExpr[] | null | undefined): boolean {
+  if (!parent) return false;
+  const effects = findNode(parent, "effects");
+  if (!effects) return false;
+  // KiCad 8: `(hide yes)`; older: bare `hide` token.
+  const hideNode = findNode(effects, "hide");
+  if (hideNode) return (getStringValue(hideNode) ?? "yes") !== "no";
+  return effects.includes("hide");
+}
+
+function parsePin(
+  node: SExpr[],
+  unit: number,
+  convert: number,
+): ParsedPin | null {
   // (pin TYPE DIRECTION (at X Y ROT) (length L) (name "N" ...) (number "N" ...))
   const electricalType = getStringValue(node, 1) ?? "unspecified";
   const direction = getStringValue(node, 2) ?? "line";
@@ -245,7 +309,10 @@ function parsePin(node: SExpr[], unit: number): ParsedPin | null {
     length: lengthNode ? (getNumberValue(lengthNode) ?? 0) : 0,
     rotation: getNumberValue(atNode, 3) ?? 0,
     unit,
+    convert,
     hidden: node.includes("hide"),
+    nameHidden: effectsHidden(nameNode),
+    numberHidden: effectsHidden(numberNode),
     nameFontSizeMm,
     numberFontSizeMm,
   };
