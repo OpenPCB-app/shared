@@ -1,6 +1,6 @@
 {
   "name": "@openpcb/kicad-import",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Normalize KiCad symbol/footprint files into OpenPCB JSON. Preview models, validation, 3D model classification, family heuristics. Pure.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -30,8 +30,8 @@
     "directory": "packages/kicad-import"
   },
   "dependencies": {
-    "@openpcb/kicad-parsers": "github:OpenPCB-app/shared#kicad-parsers-v0.1.2",
-    "@openpcb/rendering-core": "github:OpenPCB-app/shared#rendering-core-v0.1.2"
+    "@openpcb/kicad-parsers": "github:OpenPCB-app/shared#kicad-parsers-v0.1.3",
+    "@openpcb/rendering-core": "github:OpenPCB-app/shared#rendering-core-v0.1.3"
   },
   "devDependencies": {
     "@types/bun": "^1.3.5",
