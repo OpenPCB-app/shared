@@ -220,12 +220,23 @@ export function SymbolRenderLayer({
       return null;
     }
 
+    // When the part is mirrored we counter-scale the glyphs back to readable
+    // (scale [-1,1,1]); that also flips which side a left/right-anchored label
+    // extends toward, so invert the horizontal anchor to keep the text on the
+    // pin's outboard side instead of reading back into the body.
+    const effectiveAnchorX =
+      counterMirrored && label.anchorX !== "center"
+        ? label.anchorX === "left"
+          ? "right"
+          : "left"
+        : label.anchorX;
+
     const text = (
       <EDAText
         position={needsCounter ? [0, 0, 0] : [label.at.x, label.at.y, 0]}
         color={color}
         fontSize={label.fontSizeMm}
-        anchorX={label.anchorX}
+        anchorX={effectiveAnchorX}
         anchorY={label.anchorY}
         rotation={rotation}
         outlineWidth={outlineWidth}
