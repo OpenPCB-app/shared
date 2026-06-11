@@ -6,6 +6,7 @@ import { DesignsApi } from "./domains/designs.js";
 import { CommentsApi } from "./domains/comments.js";
 import { SharesApi } from "./domains/shares.js";
 import { LibraryApi } from "./domains/library.js";
+import { WorkspacesApi } from "./domains/workspaces.js";
 
 export interface CloudClientOptions {
   /** cloud-api base URL, e.g. https://api.openpcb.app (trailing slash optional). */
@@ -21,6 +22,7 @@ export interface CloudClient {
   readonly comments: CommentsApi;
   readonly shares: SharesApi;
   readonly library: LibraryApi;
+  readonly workspaces: WorkspacesApi;
   /** Low-level bearer-fetch escape hatch for endpoints not yet wrapped. */
   readonly http: HttpClient;
 }
@@ -35,6 +37,7 @@ export function createCloudClient(opts: CloudClientOptions): CloudClient {
     comments: new CommentsApi(http),
     shares: new SharesApi(http),
     library: new LibraryApi(opts.supabase, http),
+    workspaces: new WorkspacesApi(http),
     http,
   };
 }

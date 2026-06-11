@@ -143,12 +143,26 @@ export type CommentCommand =
       todoStatus?: CommentTodoStatus;
       mentions?: string[];
     }
-  | { type: "add_message"; threadId: string; messageId: string; body: string; mentions?: string[] }
+  | {
+      type: "add_message";
+      threadId: string;
+      messageId: string;
+      body: string;
+      mentions?: string[];
+    }
   | { type: "edit_message"; threadId: string; messageId: string; body: string }
   | { type: "delete_message"; threadId: string; messageId: string }
   | { type: "set_thread_status"; threadId: string; status: CommentThreadStatus }
-  | { type: "set_thread_todo_status"; threadId: string; todoStatus: CommentTodoStatus }
-  | { type: "set_thread_anchor"; threadId: string; anchor: CommentAnchor | null };
+  | {
+      type: "set_thread_todo_status";
+      threadId: string;
+      todoStatus: CommentTodoStatus;
+    }
+  | {
+      type: "set_thread_anchor";
+      threadId: string;
+      anchor: CommentAnchor | null;
+    };
 
 export interface CommentCommandEnvelope {
   commandId: string;
@@ -167,11 +181,25 @@ export interface CommentCommandResult {
   detail?: string;
 }
 
+// ── Sharing / teams roles ────────────────────────────────────────────────────
+// Canonical source: @openpcb/contracts `sharing/roles` (+ the SQL design_role_rank
+// + cloud-api _vendor/openpcb/roles). Mirrored here as types so the SDK does not
+// depend on the pinned contracts tag carrying them.
+export type WorkspaceRole = "owner" | "admin" | "editor" | "viewer";
+export type GrantRole = "editor" | "commenter" | "viewer";
+export type DesignRole = "owner" | "admin" | "editor" | "commenter" | "viewer";
+export type WorkspaceKind = "personal" | "org";
+export type MemberStatus = "invited" | "active" | "suspended" | "removed";
+export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
+export type GrantStatus = "pending" | "active" | "revoked";
+
 /** Result of creating a share — the `token` is returned exactly once. */
 export interface ShareCreated {
   id: string;
   token: string;
-  role: "viewer";
+  role: GrantRole;
+  label: string | null;
+  requireAuth: boolean;
   expiresAt: string | null;
   createdAt: string;
 }
@@ -179,18 +207,97 @@ export interface ShareCreated {
 /** A share link as listed (never includes the token). */
 export interface ShareSummary {
   id: string;
-  role: "viewer";
+  role: GrantRole;
+  label: string | null;
+  requireAuth: boolean;
   expiresAt: string | null;
   createdAt: string;
 }
 
-/** Public, token-resolved view of a shared design (no auth required). */
+/** Public, token-resolved view of a shared design. */
 export interface PublicDesign {
   id: string;
   name: string;
   revision: number;
-  role: "viewer";
+  role: GrantRole;
+  requireAuth?: boolean;
   projection: DesignProjectionResponse["projection"];
+}
+
+/** Result of redeeming a share link into a durable grant. */
+export interface ShareRedeemed {
+  ok: boolean;
+  designId: string;
+  role: GrantRole;
+}
+
+// ── Workspaces / members / invites / grants ──────────────────────────────────
+export interface WorkspaceSummary {
+  id: string;
+  slug: string;
+  kind: WorkspaceKind;
+  name: string | null;
+  /** The caller's role in this workspace. */
+  role: WorkspaceRole;
+  createdAt?: string;
+}
+
+export interface WorkspaceMember {
+  workspaceId: string;
+  userId: string;
+  email: string | null;
+  role: WorkspaceRole;
+  status: MemberStatus;
+  invitedAt: string | null;
+  acceptedAt: string | null;
+}
+
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: Exclude<WorkspaceRole, "owner">;
+  status: InviteStatus;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+/** Invite create response — the `token` is returned exactly once. */
+export interface WorkspaceInviteCreated {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: Exclude<WorkspaceRole, "owner">;
+  token: string;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface DesignGrant {
+  id: string;
+  designId: string;
+  userId: string | null;
+  email: string | null;
+  role: GrantRole;
+  status: GrantStatus;
+  invitedAt: string;
+  acceptedAt: string | null;
+}
+
+/** An entry in the caller's "shared with me" list. */
+export interface SharedDesign {
+  designId: string;
+  name: string;
+  workspaceId: string;
+  role: DesignRole;
+  revision: number;
+}
+
+/** The caller's resolved access to a design. */
+export interface DesignAccess {
+  designId: string;
+  role: DesignRole | null;
+  source: "owner" | "member" | "grant" | "link" | null;
 }
 
 /** Free-form per-user dashboard preferences (`/v1/me/settings`). */

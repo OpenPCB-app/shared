@@ -1,12 +1,16 @@
 import type { HttpClient } from "../http.js";
 import type {
   CreatedDesign,
+  DesignAccess,
+  DesignGrant,
   DesignProjectionResponse,
   DesignRecord,
   DesignRevision,
   DesignSummary,
+  GrantRole,
   Page,
   PersonalWorkspace,
+  SharedDesign,
 } from "../types.js";
 
 export interface ListDesignsOptions {
@@ -93,5 +97,45 @@ export class DesignsApi {
   /** Archive (soft-delete) a design. */
   archive(id: string): Promise<void> {
     return this.#http.delete<void>(`/v1/designs/${id}`);
+  }
+
+  /** Designs explicitly shared with the caller via per-design grants. */
+  async listSharedWithMe(): Promise<SharedDesign[]> {
+    const res = await this.#http.get<{ designs: SharedDesign[] }>(
+      "/v1/designs/shared-with-me",
+    );
+    return res.designs;
+  }
+
+  /** The caller's effective access to a design (role + source). */
+  access(id: string): Promise<DesignAccess> {
+    return this.#http.get<DesignAccess>(`/v1/designs/${id}/access`);
+  }
+
+  /** Move a design to another workspace (admin on both ends). */
+  transfer(
+    id: string,
+    targetWorkspaceId: string,
+  ): Promise<{ ok: boolean; fromWorkspaceId: string; toWorkspaceId: string }> {
+    return this.#http.post(`/v1/designs/${id}/transfer`, { targetWorkspaceId });
+  }
+
+  // ── Per-design grants (admin on the design) ────────────────────────────────
+  async listGrants(id: string): Promise<DesignGrant[]> {
+    const res = await this.#http.get<{ grants: DesignGrant[] }>(
+      `/v1/designs/${id}/grants`,
+    );
+    return res.grants;
+  }
+
+  grant(id: string, email: string, role: GrantRole): Promise<DesignGrant> {
+    return this.#http.post<DesignGrant>(`/v1/designs/${id}/grants`, {
+      email,
+      role,
+    });
+  }
+
+  revokeGrant(id: string, grantId: string): Promise<void> {
+    return this.#http.delete<void>(`/v1/designs/${id}/grants/${grantId}`);
   }
 }

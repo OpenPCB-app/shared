@@ -25,9 +25,12 @@ export type { ListDesignsOptions, RevisionsOptions, } from "./domains/designs.js
 export { CommentsApi } from "./domains/comments.js";
 export type { ListCommentsOptions } from "./domains/comments.js";
 export { SharesApi } from "./domains/shares.js";
+export type { CreateShareOptions } from "./domains/shares.js";
 export { LibraryApi } from "./domains/library.js";
 export type { BrowseOptions } from "./domains/library.js";
+export { WorkspacesApi } from "./domains/workspaces.js";
+export type { CreateInviteOptions } from "./domains/workspaces.js";
 export { CloudApiError } from "./errors.js";
 export type { ProblemDetails } from "./errors.js";
-export type { MeResponse, PersonalWorkspace, DesignSummary, DesignRecord, CreatedDesign, DesignProjectionResponse, DesignRevision, CommentAnchor, CommentAttachment, CommentCommand, CommentCommandEnvelope, CommentCommandResult, CommentMessage, CommentSurface, CommentThread, CommentThreadStatus, CommentTodoStatus, ShareCreated, ShareSummary, PublicDesign, UserSettings, LibraryComponent, AiComponentMatch, AiSearchResult, Page, CoreLibLatest, } from "./types.js";
+export type { MeResponse, PersonalWorkspace, DesignSummary, DesignRecord, CreatedDesign, DesignProjectionResponse, DesignRevision, CommentAnchor, CommentAttachment, CommentCommand, CommentCommandEnvelope, CommentCommandResult, CommentMessage, CommentSurface, CommentThread, CommentThreadStatus, CommentTodoStatus, ShareCreated, ShareSummary, ShareRedeemed, PublicDesign, WorkspaceRole, GrantRole, DesignRole, WorkspaceKind, MemberStatus, InviteStatus, GrantStatus, WorkspaceSummary, WorkspaceMember, WorkspaceInvite, WorkspaceInviteCreated, DesignGrant, SharedDesign, DesignAccess, UserSettings, LibraryComponent, AiComponentMatch, AiSearchResult, Page, CoreLibLatest, } from "./types.js";
 //# sourceMappingURL=index.d.ts.map

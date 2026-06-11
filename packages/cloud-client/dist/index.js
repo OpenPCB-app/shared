@@ -22,5 +22,6 @@ export { DesignsApi } from "./domains/designs.js";
 export { CommentsApi } from "./domains/comments.js";
 export { SharesApi } from "./domains/shares.js";
 export { LibraryApi } from "./domains/library.js";
+export { WorkspacesApi } from "./domains/workspaces.js";
 export { CloudApiError } from "./errors.js";
 //# sourceMappingURL=index.js.map

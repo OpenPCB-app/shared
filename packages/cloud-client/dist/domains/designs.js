@@ -50,5 +50,32 @@ export class DesignsApi {
     archive(id) {
         return this.#http.delete(`/v1/designs/${id}`);
     }
+    /** Designs explicitly shared with the caller via per-design grants. */
+    async listSharedWithMe() {
+        const res = await this.#http.get("/v1/designs/shared-with-me");
+        return res.designs;
+    }
+    /** The caller's effective access to a design (role + source). */
+    access(id) {
+        return this.#http.get(`/v1/designs/${id}/access`);
+    }
+    /** Move a design to another workspace (admin on both ends). */
+    transfer(id, targetWorkspaceId) {
+        return this.#http.post(`/v1/designs/${id}/transfer`, { targetWorkspaceId });
+    }
+    // ── Per-design grants (admin on the design) ────────────────────────────────
+    async listGrants(id) {
+        const res = await this.#http.get(`/v1/designs/${id}/grants`);
+        return res.grants;
+    }
+    grant(id, email, role) {
+        return this.#http.post(`/v1/designs/${id}/grants`, {
+            email,
+            role,
+        });
+    }
+    revokeGrant(id, grantId) {
+        return this.#http.delete(`/v1/designs/${id}/grants/${grantId}`);
+    }
 }
 //# sourceMappingURL=designs.js.map

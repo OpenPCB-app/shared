@@ -1,5 +1,5 @@
 import type { HttpClient } from "../http.js";
-import type { CreatedDesign, DesignProjectionResponse, DesignRecord, DesignRevision, DesignSummary, Page, PersonalWorkspace } from "../types.js";
+import type { CreatedDesign, DesignAccess, DesignGrant, DesignProjectionResponse, DesignRecord, DesignRevision, DesignSummary, GrantRole, Page, PersonalWorkspace, SharedDesign } from "../types.js";
 export interface ListDesignsOptions {
     includeArchived?: boolean;
 }
@@ -27,5 +27,18 @@ export declare class DesignsApi {
     rename(id: string, name: string): Promise<CreatedDesign>;
     /** Archive (soft-delete) a design. */
     archive(id: string): Promise<void>;
+    /** Designs explicitly shared with the caller via per-design grants. */
+    listSharedWithMe(): Promise<SharedDesign[]>;
+    /** The caller's effective access to a design (role + source). */
+    access(id: string): Promise<DesignAccess>;
+    /** Move a design to another workspace (admin on both ends). */
+    transfer(id: string, targetWorkspaceId: string): Promise<{
+        ok: boolean;
+        fromWorkspaceId: string;
+        toWorkspaceId: string;
+    }>;
+    listGrants(id: string): Promise<DesignGrant[]>;
+    grant(id: string, email: string, role: GrantRole): Promise<DesignGrant>;
+    revokeGrant(id: string, grantId: string): Promise<void>;
 }
 //# sourceMappingURL=designs.d.ts.map
