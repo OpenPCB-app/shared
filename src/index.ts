@@ -9,3 +9,4 @@
 export * from "./sdks/index.js";
 export * from "./library/import.js";
 export * from "./errors/index.js";
+export * from "./sharing/index.js";
