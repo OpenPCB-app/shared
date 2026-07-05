@@ -1,0 +1,59 @@
+{
+  "properties": {
+    "type": {
+      "enum": [
+        "run.started",
+        "run.message.delta",
+        "run.message.completed",
+        "run.tool.requested",
+        "run.tool.running",
+        "run.tool.succeeded",
+        "run.tool.failed",
+        "run.warning",
+        "run.completed",
+        "run.failed",
+        "run.cancelled",
+        "run.awaiting.approval",
+        "copilot.task.updated",
+        "copilot.proposal.created",
+        "copilot.plan.created",
+        "copilot.plan.updated"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "runId": {
+      "title": "Runid",
+      "type": "string"
+    },
+    "seq": {
+      "title": "Seq",
+      "type": "integer"
+    },
+    "stepId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stepid"
+    },
+    "data": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Data",
+      "type": "object"
+    }
+  },
+  "required": [
+    "type",
+    "runId",
+    "seq"
+  ],
+  "title": "CopilotStreamFrame",
+  "type": "object"
+}
