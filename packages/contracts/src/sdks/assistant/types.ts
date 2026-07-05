@@ -282,6 +282,9 @@ export interface SubmitAssistantMessageInput {
   providerConfigId?: string;
   model?: string;
   promptPresetId?: AssistantPromptPresetId;
+  /** S6: "cloud" routes the message to the cloud-copilot service
+   * (`assistant.cloud-chat` executor) instead of the local BYO provider. */
+  mode?: "local" | "cloud";
 }
 
 export interface SubmitAssistantMessageResult {
