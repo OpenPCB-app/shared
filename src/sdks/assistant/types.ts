@@ -129,6 +129,10 @@ export type AssistantWriteProposalKind =
   | "designer_schematic_wires"
   | "designer_schematic_updates"
   | "designer_schematic_deletions"
+  // Cloud-copilot PCB batches (S5/S8): staged by the auto-layout orchestration
+  // tools; always high-risk, never auto-applied (desktop stays DRC authority).
+  | "designer_pcb_place_batch"
+  | "designer_pcb_route_batch"
   | (string & {});
 export type AssistantWriteProposalStatus =
   | "pending"
@@ -195,6 +199,10 @@ export interface AssistantWriteProposalEnvelope<TPayload = unknown> {
   createdByToolCallId?: string;
 }
 
+/** Where a write proposal came from: the local BYO assistant (default) or a
+ * mirrored cloud-copilot run (S6 cloud chat mode). */
+export type AssistantWriteProposalOrigin = "local" | "cloud";
+
 export interface AssistantWriteProposalDto {
   id: string;
   chatId: string;
@@ -203,6 +211,12 @@ export interface AssistantWriteProposalDto {
   status: AssistantWriteProposalStatus;
   designId: string;
   baseRevision: number | null;
+  /** Absent/undefined ⇒ "local" (pre-S6 rows). */
+  origin?: AssistantWriteProposalOrigin;
+  /** Cloud-copilot linkage for origin="cloud": used for the idempotent
+   * `/applied` callback after a local apply. */
+  cloudRunId?: string | null;
+  cloudProposalId?: string | null;
   toolName?: string | null;
   title?: string | null;
   summary?: string | null;
