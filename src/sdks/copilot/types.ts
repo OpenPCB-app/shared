@@ -7,7 +7,7 @@
  * fixture from the cloud-copilot repo when the frame contract changes.
  *
  * The 11 `run.*` frame names are string-identical to `AiRunEventType`
- * (`@openpcb/ai-core`); the 5 copilot-only frames have no AiRunEventType
+ * (`@openpcb/ai-core`); the 6 copilot-only frames have no AiRunEventType
  * equivalent and are handled on a dedicated branch by the desktop frame mapper.
  */
 
@@ -28,7 +28,8 @@ export type CopilotStreamFrameType =
   | "copilot.task.updated"
   | "copilot.proposal.created"
   | "copilot.plan.created"
-  | "copilot.plan.updated";
+  | "copilot.plan.updated"
+  | "copilot.plan.checkpoint";
 
 /** The 11 frame types shared verbatim with `AiRunEventType` (@openpcb/ai-core). */
 export type CopilotSharedRunFrameType =
@@ -45,7 +46,7 @@ export type CopilotSharedRunFrameType =
   | "run.cancelled";
 
 /**
- * The 5 copilot-only frame types with no AiRunEventType equivalent
+ * The 6 copilot-only frame types with no AiRunEventType equivalent
  * (`run.awaiting.approval` + the `copilot.*` frames).
  */
 export type CopilotOnlyFrameType = Exclude<
@@ -153,6 +154,15 @@ export interface PatchCopilotPlanRequest {
 export interface CopilotPlanMutationResponse {
   planRevision: number;
   tasks: CopilotPlanTask[];
+}
+
+/**
+ * `POST /v1/copilot/runs/:id/resume` request body (S7): release a run parked at a
+ * plan checkpoint (`awaiting_input`). `message` = guidance for the next step,
+ * delivered through the steer inbox. 409 when the run is not parked.
+ */
+export interface ResumeCopilotRunRequest {
+  message?: string | null;
 }
 
 // ── proposals ─────────────────────────────────────────────────────────────────

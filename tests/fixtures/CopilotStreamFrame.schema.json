@@ -17,7 +17,8 @@
         "copilot.task.updated",
         "copilot.proposal.created",
         "copilot.plan.created",
-        "copilot.plan.updated"
+        "copilot.plan.updated",
+        "copilot.plan.checkpoint"
       ],
       "title": "Type",
       "type": "string"
