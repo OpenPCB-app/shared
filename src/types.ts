@@ -68,6 +68,10 @@ export interface OpclibComponentEntry {
   name: string;
   description?: string;
   category: string;
+  subcategory?: string;
+  /** Curated manufacturer datasheet URL (null = intentionally none, e.g. generics). */
+  datasheet?: string | null;
+  keywords?: string[];
   tags?: string[];
   aliases?: string[];
   symbol: string;
