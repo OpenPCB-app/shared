@@ -4,6 +4,7 @@ export const MODULE_SDK_TOKENS = {
   TASKS: "TasksSDK",
   ASSISTANT: "AssistantSDK",
   COPILOT: "CopilotSDK",
+  BILLING: "BillingSDK",
 } as const;
 
 export type ModuleSdkToken =
@@ -14,3 +15,4 @@ export * from "./designer/index.js";
 export * from "./tasks/index.js";
 export * from "./assistant/index.js";
 export * from "./copilot/index.js";
+export * from "./billing/index.js";

@@ -33,6 +33,7 @@ const ALL_FRAME_TYPES: Record<CopilotStreamFrameType, true> = {
   "copilot.plan.created": true,
   "copilot.plan.updated": true,
   "copilot.plan.checkpoint": true,
+  "copilot.usage": true,
 };
 
 const SHARED: Record<CopilotSharedRunFrameType, true> = {
@@ -56,6 +57,7 @@ const COPILOT_ONLY: Record<CopilotOnlyFrameType, true> = {
   "copilot.plan.created": true,
   "copilot.plan.updated": true,
   "copilot.plan.checkpoint": true,
+  "copilot.usage": true,
 };
 
 describe("CopilotStreamFrame contract drift", () => {

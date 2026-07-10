@@ -1,0 +1,1 @@
+{"version":3,"file":"opcb-zoneswitch.d.ts","sourceRoot":"","sources":["../src/opcb-zoneswitch.ts"],"names":[],"mappings":"AAKA;;;;;;;GAOG;AACH,qBAAa,cAAe,SAAQ,WAAW;IAC7C,MAAM,KAAK,kBAAkB,IAAI,MAAM,EAAE,CAExC;IAED,OAAO,CAAC,QAAQ,CAAC,IAAI,CAAa;;IAOlC,iBAAiB,IAAI,IAAI;IAKzB,wBAAwB,IAAI,IAAI;IAIhC,OAAO,KAAK,OAAO,GAKlB;IAED,OAAO,CAAC,MAAM;IASd,OAAO,CAAC,QAAQ,CAAC,WAAW,CAgB1B;CACH"}

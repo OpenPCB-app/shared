@@ -17,6 +17,7 @@ PACKAGES=(
   command-pattern
   contracts
   ai-core
+  nav-shell
 )
 
 for pkg in "${PACKAGES[@]}"; do

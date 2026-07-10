@@ -1,0 +1,13 @@
+# graphify already merges .gitignore and hardcodes node_modules/dist/build/
+# coverage/.turbo/.cache/.idea/__pycache__ etc as skip-dirs, plus package-lock.json/
+# yarn.lock/pnpm-lock.yaml by filename. Only repo-specific extras below.
+
+# macOS cruft
+.DS_Store
+
+# Session/status tracking docs — not architecture
+CURRENT_STATE.md
+TODO.md
+
+# Prior graphify run output living at repo root
+graphify-out/

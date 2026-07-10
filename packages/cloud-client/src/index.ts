@@ -33,6 +33,22 @@ export { LibraryApi } from "./domains/library.js";
 export type { BrowseOptions } from "./domains/library.js";
 export { WorkspacesApi } from "./domains/workspaces.js";
 export type { CreateInviteOptions } from "./domains/workspaces.js";
+export { BillingApi } from "./domains/billing.js";
+export type {
+  BillingMode,
+  BillingPlan,
+  BillingTransaction,
+  SubscriptionStatus,
+  SubscriptionView,
+  TopupRequest,
+  TopupResult,
+  UsageDayPoint,
+  UsageServiceBreakdown,
+  UsageSummary,
+  UsageTotals,
+  UsageUserBreakdown,
+  WalletBalance,
+} from "@openpcb/contracts";
 export { CloudApiError } from "./errors.js";
 export type { ProblemDetails } from "./errors.js";
 export type {

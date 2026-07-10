@@ -29,7 +29,8 @@ export type CopilotStreamFrameType =
   | "copilot.proposal.created"
   | "copilot.plan.created"
   | "copilot.plan.updated"
-  | "copilot.plan.checkpoint";
+  | "copilot.plan.checkpoint"
+  | "copilot.usage";
 
 /** The 11 frame types shared verbatim with `AiRunEventType` (@openpcb/ai-core). */
 export type CopilotSharedRunFrameType =
@@ -61,6 +62,21 @@ export interface CopilotStreamFrame {
   seq: number;
   stepId?: string | null;
   data: Record<string, unknown>;
+}
+
+/**
+ * `data` payload of a `copilot.usage` frame — live per-step credit surfacing.
+ * Advisory (the workspace wallet row is the money source-of-truth); UX only.
+ */
+export interface CopilotUsageFrameData {
+  /** Remaining workspace wallet balance in credits (post-settle). */
+  creditsRemaining: number;
+  /** Credits consumed by this run so far. */
+  runCreditsTotal: number;
+  /** Real USD cost accrued by this run so far. */
+  costUsdRunTotal: number;
+  /** Balance is at/below the workspace low-balance threshold. */
+  lowBalance: boolean;
 }
 
 // ── runs ──────────────────────────────────────────────────────────────────────

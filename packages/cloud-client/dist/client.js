@@ -6,6 +6,7 @@ import { CommentsApi } from "./domains/comments.js";
 import { SharesApi } from "./domains/shares.js";
 import { LibraryApi } from "./domains/library.js";
 import { WorkspacesApi } from "./domains/workspaces.js";
+import { BillingApi } from "./domains/billing.js";
 /** Construct the OpenPCB Cloud client SDK. */
 export function createCloudClient(opts) {
     const http = new HttpClient(opts.apiUrl, opts.supabase);
@@ -17,6 +18,7 @@ export function createCloudClient(opts) {
         shares: new SharesApi(http),
         library: new LibraryApi(opts.supabase, http),
         workspaces: new WorkspacesApi(http),
+        billing: new BillingApi(http),
         http,
     };
 }

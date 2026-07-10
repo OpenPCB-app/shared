@@ -18,7 +18,8 @@
         "copilot.proposal.created",
         "copilot.plan.created",
         "copilot.plan.updated",
-        "copilot.plan.checkpoint"
+        "copilot.plan.checkpoint",
+        "copilot.usage"
       ],
       "title": "Type",
       "type": "string"

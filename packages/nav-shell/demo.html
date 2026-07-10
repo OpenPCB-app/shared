@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@openpcb/nav-shell — demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Canonical OpenPCB tokens — the shell inherits these through the shadow boundary. */
+      :root {
+        --violet: #7c3aed;
+        --violet-bright: #8b5cf6;
+        --violet-text: #c4b5fd;
+        --copper: #e0573a;
+        --teal: #5dcaa5;
+        --warning: #fbbf24;
+        --radius-control: 8px;
+        --radius-pill: 999px;
+        --font-sans: "Inter", system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        --maxw: 1200px;
+        --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+      }
+      html[data-theme="dark"] {
+        --bg: #0a0e16;
+        --bg-elev: #0f1520;
+        --surface: #151e30;
+        --surface-2: #1a2438;
+        --input: #10141b;
+        --border: #243049;
+        --border-soft: #1a2436;
+        --hairline: rgba(255, 255, 255, 0.06);
+        --text: #f3f4f6;
+        --text-2: #9ca3af;
+        --text-3: #6b7280;
+        --accent-text: var(--violet-text);
+        --glow: rgba(124, 58, 237, 0.45);
+      }
+      html[data-theme="light"] {
+        --bg: #f0f4fb;
+        --bg-elev: #fff;
+        --surface: #fff;
+        --surface-2: #f8fafc;
+        --input: #f8fafc;
+        --border: #d2dded;
+        --border-soft: #e4eaf4;
+        --hairline: rgba(15, 23, 42, 0.06);
+        --text: #111827;
+        --text-2: #475569;
+        --text-3: #64748b;
+        --accent-text: #6d28d9;
+        --glow: rgba(124, 58, 237, 0.3);
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-sans);
+      }
+      .demo-section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 60px 28px;
+      }
+      .demo-section h1 {
+        font-size: 32px;
+      }
+      .demo-controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+      .demo-controls button {
+        font: inherit;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .label {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-3);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin: 48px 0 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p
+      class="label"
+      style="padding: 0 28px; max-width: 1200px; margin: 16px auto 0"
+    >
+      mode="marketing"
+    </p>
+    <opcb-nav mode="marketing" active="features"></opcb-nav>
+
+    <div class="demo-section">
+      <h1>nav-shell demo</h1>
+      <p>
+        The two bars above/below share one source. Marketing has no area-switch
+        or search; the app modes do.
+      </p>
+      <div class="demo-controls">
+        <button id="login">Set session cookie (login)</button>
+        <button id="logout">Clear session cookie (logout)</button>
+        <button id="reload">Reload nav state</button>
+      </div>
+    </div>
+
+    <p class="label" style="padding: 0 28px; max-width: 1200px; margin: 0 auto">
+      mode="community"
+    </p>
+    <opcb-nav mode="community" active="community"></opcb-nav>
+    <div class="demo-section" style="padding-top: 28px; padding-bottom: 0">
+      <opcb-zoneswitch active="community"></opcb-zoneswitch>
+      <span style="margin-left: 12px; color: var(--text-3); font-size: 13px"
+        >← zone-switch lives in the page body (keeps the header identical)</span
+      >
+    </div>
+
+    <p
+      class="label"
+      style="padding: 0 28px; max-width: 1200px; margin: 24px auto 0"
+    >
+      mode="workspace"
+    </p>
+    <opcb-nav mode="workspace"></opcb-nav>
+    <div class="demo-section" style="padding-top: 28px; padding-bottom: 0">
+      <opcb-zoneswitch active="workspace"></opcb-zoneswitch>
+    </div>
+
+    <div style="height: 80px"></div>
+    <opcb-footer></opcb-footer>
+
+    <script type="module">
+      import { setSessionHint, clearSessionHint } from "./dist/index.js";
+      document.getElementById("login").onclick = () => {
+        setSessionHint({ name: "Ada Vance", email: "ada@openpcb.app" });
+        document
+          .querySelectorAll("opcb-nav")
+          .forEach((n) => window.dispatchEvent(new Event("focus")));
+      };
+      document.getElementById("logout").onclick = () => {
+        clearSessionHint();
+        window.dispatchEvent(new Event("focus"));
+      };
+      document.getElementById("reload").onclick = () =>
+        window.dispatchEvent(new Event("focus"));
+      window.addEventListener("opcb-nav:navigate", (e) =>
+        console.log("opcb-nav:navigate →", e.detail.path),
+      );
+    </script>
+  </body>
+</html>

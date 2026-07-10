@@ -18,6 +18,7 @@ PACKAGES=(
   command-pattern
   contracts
   ai-core
+  nav-shell
 )
 
 # Ensure dist/ exists for every package before linking; consumers resolve

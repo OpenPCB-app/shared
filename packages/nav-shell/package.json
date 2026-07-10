@@ -1,0 +1,51 @@
+{
+  "name": "@openpcb/nav-shell",
+  "version": "0.1.0",
+  "description": "Framework-agnostic unified navigation shell for OpenPCB: <opcb-nav> + <opcb-footer> custom elements. One source of truth for the header/footer shared by the marketing landing (openpcb.app) and the cloud app (app.openpcb.app).",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./standalone": "./dist/standalone/opcb-nav.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "bundle": "bun build src/index.ts --outfile dist/standalone/opcb-nav.js --minify --target browser",
+    "build:all": "npm run build && npm run bundle",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "prepack": "npm run build",
+    "prepare": "npm run build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenPCB-app/shared.git",
+    "directory": "packages/nav-shell"
+  },
+  "keywords": [
+    "openpcb",
+    "web-component",
+    "custom-element",
+    "navigation",
+    "design-system"
+  ],
+  "sideEffects": [
+    "./dist/index.js",
+    "./src/index.ts"
+  ],
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "typescript": "^5.8.3"
+  }
+}
