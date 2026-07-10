@@ -25,6 +25,14 @@ export interface FootprintWithPads {
 
 export interface PadValidationOptions {
   requirePads?: boolean;
+  /**
+   * Permit pads with an empty number. Unnumbered pads are mechanical —
+   * NPTH mounting holes, fiducials, connector shield/peg pads — and carry no
+   * net, so they can never bind to a symbol pin. Electrical paths (drawn /
+   * generated footprints) should keep the default strict behavior; KiCad
+   * library imports of mechanical parts need this relaxation.
+   */
+  allowUnnumberedPads?: boolean;
 }
 
 export function validateFootprintPads(
@@ -32,12 +40,17 @@ export function validateFootprintPads(
   options: PadValidationOptions = {},
 ): void {
   const requirePads = options.requirePads ?? true;
+  const allowUnnumberedPads = options.allowUnnumberedPads ?? false;
   const pads = footprint.pads;
 
   if (requirePads && pads.length === 0) {
     throw new KicadImportValidationError(
       `Footprint "${footprint.name}" has no pads. Add at least one pad before committing.`,
     );
+  }
+
+  if (allowUnnumberedPads) {
+    return;
   }
 
   const empties: number[] = [];
@@ -48,7 +61,7 @@ export function validateFootprintPads(
   });
   if (empties.length > 0) {
     throw new KicadImportValidationError(
-      `Footprint "${footprint.name}" has ${empties.length} pad(s) with empty number (indices: ${empties.join(", ")}). Every pad must have a non-empty number.`,
+      `Footprint "${footprint.name}" has ${empties.length} pad(s) with empty number (indices: ${empties.join(", ")}). Every pad must have a non-empty number. Mechanical/NPTH pads are only accepted with allowUnnumberedPads.`,
     );
   }
 }
