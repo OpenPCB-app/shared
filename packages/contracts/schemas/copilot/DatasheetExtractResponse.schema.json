@@ -1,0 +1,358 @@
+{
+  "$defs": {
+    "AbsMax": {
+      "properties": {
+        "vddMaxV": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vddmaxv"
+        },
+        "tjMaxC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tjmaxc"
+        }
+      },
+      "title": "AbsMax",
+      "type": "object"
+    },
+    "FactsPayload": {
+      "properties": {
+        "package": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package"
+        },
+        "absMax": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AbsMax"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "operating": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Operating"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "perPin": {
+          "items": {
+            "$ref": "#/$defs/PerPin"
+          },
+          "title": "Perpin",
+          "type": "array"
+        },
+        "thermal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Thermal"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "FactsPayload",
+      "type": "object"
+    },
+    "Operating": {
+      "properties": {
+        "vddMinV": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vddminv"
+        },
+        "vddMaxV": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vddmaxv"
+        },
+        "tempMinC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tempminc"
+        },
+        "tempMaxC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tempmaxc"
+        }
+      },
+      "title": "Operating",
+      "type": "object"
+    },
+    "PerPin": {
+      "properties": {
+        "pinNumber": {
+          "title": "Pinnumber",
+          "type": "string"
+        },
+        "maxCurrentMa": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maxcurrentma"
+        },
+        "fiveVoltTolerant": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fivevolttolerant"
+        }
+      },
+      "required": [
+        "pinNumber"
+      ],
+      "title": "PerPin",
+      "type": "object"
+    },
+    "PinSuggestion": {
+      "properties": {
+        "pinNumber": {
+          "title": "Pinnumber",
+          "type": "string"
+        },
+        "pinName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pinname"
+        },
+        "signalType": {
+          "default": "unknown",
+          "enum": [
+            "digital",
+            "analog",
+            "power",
+            "ground",
+            "clock",
+            "rf",
+            "diff-pair",
+            "high-speed",
+            "mixed",
+            "unknown"
+          ],
+          "title": "Signaltype",
+          "type": "string"
+        },
+        "confidence": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        }
+      },
+      "required": [
+        "pinNumber"
+      ],
+      "title": "PinSuggestion",
+      "type": "object"
+    },
+    "Thermal": {
+      "properties": {
+        "thetaJaCPerW": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thetajacperw"
+        }
+      },
+      "title": "Thermal",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "status": {
+      "enum": [
+        "ready",
+        "preparing"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "modelVersion": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Modelversion"
+    },
+    "sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sha256"
+    },
+    "pins": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/PinSuggestion"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pins"
+    },
+    "facts": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FactsPayload"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "sha256s": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Sha256S",
+      "type": "array"
+    },
+    "streamUrl": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Streamurl"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "DatasheetExtractResponse",
+  "type": "object"
+}

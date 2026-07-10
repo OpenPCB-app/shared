@@ -1,0 +1,32 @@
+{
+  "properties": {
+    "sha256": {
+      "title": "Sha256",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "registered",
+        "queued",
+        "fetching",
+        "extracting",
+        "embedding",
+        "done",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "alreadyIngested": {
+      "title": "Alreadyingested",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "sha256",
+    "status",
+    "alreadyIngested"
+  ],
+  "title": "RegisterResponse",
+  "type": "object"
+}

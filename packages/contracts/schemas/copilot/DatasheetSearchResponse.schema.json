@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "SearchExcerpt": {
+      "properties": {
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer"
+        },
+        "ord": {
+          "title": "Ord",
+          "type": "integer"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "mpn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mpn"
+        }
+      },
+      "required": [
+        "sha256",
+        "page",
+        "ord",
+        "content",
+        "score"
+      ],
+      "title": "SearchExcerpt",
+      "type": "object"
+    },
+    "SourceRef": {
+      "description": "AiSourceRef parity (ai-core source-ref.ts): id required, kind 'file'.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "default": "file",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "refId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refid"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "status": {
+      "enum": [
+        "ready",
+        "preparing"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "excerpts": {
+      "items": {
+        "$ref": "#/$defs/SearchExcerpt"
+      },
+      "title": "Excerpts",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/SourceRef"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "sha256s": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Sha256S",
+      "type": "array"
+    },
+    "preparingSha256s": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Preparingsha256S",
+      "type": "array"
+    },
+    "failedSha256s": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Failedsha256S",
+      "type": "array"
+    },
+    "streamUrl": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Streamurl"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "DatasheetSearchResponse",
+  "type": "object"
+}

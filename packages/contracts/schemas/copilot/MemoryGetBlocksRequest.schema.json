@@ -1,0 +1,45 @@
+{
+  "properties": {
+    "workspaceId": {
+      "title": "Workspaceid",
+      "type": "string"
+    },
+    "designId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Designid"
+    },
+    "runKind": {
+      "default": "",
+      "title": "Runkind",
+      "type": "string"
+    },
+    "refTerms": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 200,
+      "title": "Refterms",
+      "type": "array"
+    },
+    "maxTokens": {
+      "default": 16000,
+      "maximum": 64000,
+      "minimum": 1,
+      "title": "Maxtokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "workspaceId"
+  ],
+  "title": "MemoryGetBlocksRequest",
+  "type": "object"
+}

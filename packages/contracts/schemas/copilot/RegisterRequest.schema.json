@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "OwnerRef": {
+      "properties": {
+        "kind": {
+          "enum": [
+            "component",
+            "design"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "workspaceId": {
+          "title": "Workspaceid",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "primary": {
+          "default": false,
+          "title": "Primary",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "workspaceId",
+        "id"
+      ],
+      "title": "OwnerRef",
+      "type": "object"
+    },
+    "StorageRef": {
+      "properties": {
+        "bucket": {
+          "title": "Bucket",
+          "type": "string"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bucket",
+        "key"
+      ],
+      "title": "StorageRef",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "byteSize": {
+      "exclusiveMinimum": 0,
+      "title": "Bytesize",
+      "type": "integer"
+    },
+    "source": {
+      "enum": [
+        "user-upload",
+        "vendor-fetch",
+        "core-authored"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "visibility": {
+      "enum": [
+        "global",
+        "private"
+      ],
+      "title": "Visibility",
+      "type": "string"
+    },
+    "storage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StorageRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "sourceUrl": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sourceurl"
+    },
+    "mpn": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mpn"
+    },
+    "manufacturer": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Manufacturer"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title"
+    },
+    "license": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "License"
+    },
+    "owner": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OwnerRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "sha256",
+    "byteSize",
+    "source",
+    "visibility"
+  ],
+  "title": "RegisterRequest",
+  "type": "object"
+}

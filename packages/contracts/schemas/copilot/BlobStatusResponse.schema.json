@@ -1,0 +1,73 @@
+{
+  "properties": {
+    "sha256": {
+      "title": "Sha256",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "registered",
+        "queued",
+        "fetching",
+        "extracting",
+        "embedding",
+        "done",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "pageCount": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pagecount"
+    },
+    "ocrUsed": {
+      "default": false,
+      "title": "Ocrused",
+      "type": "boolean"
+    },
+    "lang": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lang"
+    },
+    "attempts": {
+      "default": 0,
+      "title": "Attempts",
+      "type": "integer"
+    },
+    "failureReason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failurereason"
+    }
+  },
+  "required": [
+    "sha256",
+    "status"
+  ],
+  "title": "BlobStatusResponse",
+  "type": "object"
+}

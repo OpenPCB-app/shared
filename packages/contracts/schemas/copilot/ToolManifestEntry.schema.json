@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "ToolPricing": {
+      "properties": {
+        "unit": {
+          "const": "call",
+          "title": "Unit",
+          "type": "string"
+        },
+        "credits": {
+          "title": "Credits",
+          "type": "number"
+        }
+      },
+      "required": [
+        "unit",
+        "credits"
+      ],
+      "title": "ToolPricing",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    },
+    "inputSchemaRef": {
+      "title": "Inputschemaref",
+      "type": "string"
+    },
+    "outputSchemaRef": {
+      "title": "Outputschemaref",
+      "type": "string"
+    },
+    "pricing": {
+      "$ref": "#/$defs/ToolPricing"
+    },
+    "durationClass": {
+      "enum": [
+        "fast",
+        "slow"
+      ],
+      "title": "Durationclass",
+      "type": "string"
+    },
+    "authScope": {
+      "enum": [
+        "pro",
+        "workspace-viewer",
+        "workspace-editor"
+      ],
+      "title": "Authscope",
+      "type": "string"
+    },
+    "minClientVersion": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Minclientversion"
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "inputSchemaRef",
+    "outputSchemaRef",
+    "pricing",
+    "durationClass",
+    "authScope"
+  ],
+  "title": "ToolManifestEntry",
+  "type": "object"
+}

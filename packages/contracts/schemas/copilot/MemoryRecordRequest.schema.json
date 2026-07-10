@@ -1,0 +1,45 @@
+{
+  "properties": {
+    "workspaceId": {
+      "title": "Workspaceid",
+      "type": "string"
+    },
+    "designId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Designid"
+    },
+    "key": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Key",
+      "type": "string"
+    },
+    "value": {
+      "default": null,
+      "title": "Value"
+    },
+    "source": {
+      "default": "agent",
+      "enum": [
+        "user",
+        "agent"
+      ],
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "workspaceId",
+    "key"
+  ],
+  "title": "MemoryRecordRequest",
+  "type": "object"
+}

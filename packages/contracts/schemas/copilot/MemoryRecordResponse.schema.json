@@ -1,0 +1,27 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "scope": {
+      "enum": [
+        "org",
+        "design"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "key": {
+      "title": "Key",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "scope",
+    "key"
+  ],
+  "title": "MemoryRecordResponse",
+  "type": "object"
+}

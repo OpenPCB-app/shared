@@ -1,0 +1,48 @@
+{
+  "$defs": {
+    "ComponentSearchResult": {
+      "properties": {
+        "componentId": {
+          "title": "Componentid",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "componentId",
+        "score"
+      ],
+      "title": "ComponentSearchResult",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "results": {
+      "items": {
+        "$ref": "#/$defs/ComponentSearchResult"
+      },
+      "title": "Results",
+      "type": "array"
+    }
+  },
+  "required": [
+    "results"
+  ],
+  "title": "ComponentSearchResponse",
+  "type": "object"
+}

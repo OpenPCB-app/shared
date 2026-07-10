@@ -1,0 +1,22 @@
+{
+  "properties": {
+    "query": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Query",
+      "type": "string"
+    },
+    "count": {
+      "default": 10,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "query"
+  ],
+  "title": "ComponentSearchRequest",
+  "type": "object"
+}

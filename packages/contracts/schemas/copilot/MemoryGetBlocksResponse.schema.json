@@ -1,0 +1,47 @@
+{
+  "$defs": {
+    "PromptContextBlock": {
+      "description": "AiPromptContextBlock parity (memory/selection.to_blocks output).",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "priority": {
+          "title": "Priority",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "priority"
+      ],
+      "title": "PromptContextBlock",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "blocks": {
+      "items": {
+        "$ref": "#/$defs/PromptContextBlock"
+      },
+      "title": "Blocks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "blocks"
+  ],
+  "title": "MemoryGetBlocksResponse",
+  "type": "object"
+}

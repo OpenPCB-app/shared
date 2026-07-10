@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "SymbolPin": {
+      "properties": {
+        "pinNumber": {
+          "title": "Pinnumber",
+          "type": "string"
+        },
+        "pinName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pinname"
+        },
+        "electricalType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Electricaltype"
+        }
+      },
+      "required": [
+        "pinNumber"
+      ],
+      "title": "SymbolPin",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "kind": {
+      "enum": [
+        "pins",
+        "facts"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "workspaceId": {
+      "title": "Workspaceid",
+      "type": "string"
+    },
+    "sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sha256"
+    },
+    "mpn": {
+      "default": "",
+      "title": "Mpn",
+      "type": "string"
+    },
+    "componentId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Componentid"
+    },
+    "designId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Designid"
+    },
+    "symbolPins": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/SymbolPin"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Symbolpins"
+    }
+  },
+  "required": [
+    "kind",
+    "workspaceId"
+  ],
+  "title": "DatasheetExtractRequest",
+  "type": "object"
+}

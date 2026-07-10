@@ -1,0 +1,83 @@
+{
+  "properties": {
+    "query": {
+      "minLength": 1,
+      "title": "Query",
+      "type": "string"
+    },
+    "workspaceId": {
+      "title": "Workspaceid",
+      "type": "string"
+    },
+    "scope": {
+      "default": "design",
+      "enum": [
+        "design",
+        "library"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "componentId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Componentid"
+    },
+    "designId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Designid"
+    },
+    "mpn": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mpn"
+    },
+    "sha256s": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Sha256S",
+      "type": "array"
+    },
+    "count": {
+      "default": 8,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+    },
+    "includeOlderRevisions": {
+      "default": false,
+      "title": "Includeolderrevisions",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "query",
+    "workspaceId"
+  ],
+  "title": "DatasheetSearchRequest",
+  "type": "object"
+}
