@@ -219,6 +219,13 @@
         "name": { "type": "string" },
         "description": { "type": "string" },
         "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "datasheet": { "type": ["string", "null"] },
+        "keywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
         "tags": {
           "type": "array",
           "items": { "type": "string" },
