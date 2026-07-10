@@ -13,7 +13,7 @@ export const ZIP_LIMITS = {
   /** Maximum sum of uncompressed entry sizes. */
   maxTotalUncompressedBytes: 200 * 1024 * 1024,
   /** Maximum number of entries in a single archive. */
-  maxEntries: 500,
+  maxEntries: 8192,
   /** Per-entry cap for text decoding (`decodeTextEntry`). */
   maxTextFileBytes: 5 * 1024 * 1024,
 } as const;
