@@ -30,6 +30,14 @@ export interface EDATextProps {
   visible?: boolean;
   outlineWidth?: number;
   outlineColor?: string;
+  /**
+   * When true, the text material participates in depth testing so 3D geometry
+   * in front of it (component bodies, pads) occludes it. Default false keeps
+   * the 2D canvas always-on-top convention (coplanar, renderOrder-layered).
+   * depthWrite stays permanently false — a transparent SDF quad must never
+   * write depth for its anti-aliased margins.
+   */
+  depthTest?: boolean;
 }
 
 const DEFAULT_FONT_SIZE = 250_000;
@@ -48,6 +56,7 @@ export function EDAText({
   visible = true,
   outlineWidth,
   outlineColor,
+  depthTest = false,
 }: EDATextProps) {
   if (!visible) return null;
 
@@ -61,7 +70,7 @@ export function EDAText({
       rotation={rotation}
       maxWidth={maxWidth || undefined}
       renderOrder={renderOrder}
-      material-depthTest={false}
+      material-depthTest={depthTest}
       material-depthWrite={false}
       material-transparent={true}
       material-opacity={opacity}

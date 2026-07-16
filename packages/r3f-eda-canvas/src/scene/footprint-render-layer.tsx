@@ -425,6 +425,7 @@ export function FootprintRenderLayer({
             fontSize={label.fontSizeMm}
             anchorX={label.anchorX}
             anchorY={label.anchorY}
+            depthTest={enableDepthTest}
             opacity={
               (isDimmed ? dimmedOpacity : 1) * getLayerOpacity(effectiveLayer)
             }
