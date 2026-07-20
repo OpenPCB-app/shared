@@ -34,7 +34,7 @@
     "directory": "packages/cloud-client"
   },
   "dependencies": {
-    "@openpcb/contracts": "github:OpenPCB-app/shared#contracts-v0.2.4"
+    "@openpcb/contracts": "github:OpenPCB-app/shared#contracts-v0.3.0"
   },
   "peerDependencies": {
     "@supabase/supabase-js": "^2.47.0"

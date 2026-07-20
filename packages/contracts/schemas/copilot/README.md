@@ -14,7 +14,7 @@ model names (e.g. `"ComponentSearchRequest"`) resolved against THIS directory as
 `<name>.schema.json` — the R4 desktop remote-tool adapter generator relies on it.
 
 - Source repo: OpenPCB-app/cloud-copilot (locally: `../cloud-workspace/cloud-copilot`)
-- Vendored at commit: `c568936`
+- Vendored at commit: `42a5365`
 
 ## Sync
 

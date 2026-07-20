@@ -34,6 +34,13 @@ export interface FactsPayload {
   thermal?: Thermal | null;
 }
 
+export interface LlmModelEntry {
+  id: string;
+  object?: "model";
+  owned_by?: string;
+  default?: boolean;
+}
+
 export interface Operating {
   vddMinV?: number | null;
   vddMaxV?: number | null;
@@ -188,6 +195,11 @@ export interface DatasheetSearchResponse {
 
 export interface ErrorBody {
   error: ErrorDetail;
+}
+
+export interface LlmModelList {
+  object?: "list";
+  data: LlmModelEntry[];
 }
 
 export interface MemoryGetBlocksRequest {

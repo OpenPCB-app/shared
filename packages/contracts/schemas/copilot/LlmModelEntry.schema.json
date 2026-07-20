@@ -1,0 +1,29 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object": {
+      "const": "model",
+      "default": "model",
+      "title": "Object",
+      "type": "string"
+    },
+    "owned_by": {
+      "default": "openpcb",
+      "title": "Owned By",
+      "type": "string"
+    },
+    "default": {
+      "type": "boolean",
+      "default": false,
+      "title": "Default"
+    }
+  },
+  "required": [
+    "id"
+  ],
+  "title": "LlmModelEntry",
+  "type": "object"
+}
