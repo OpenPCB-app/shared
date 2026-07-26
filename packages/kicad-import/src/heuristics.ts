@@ -98,15 +98,26 @@ export function extractPackageCode(name: string): {
   imperial: string | null;
   metric: string | null;
 } {
-  // Chip pattern: C_0603_1608Metric
-  const chipMatch = name.match(/^C[P]?_(\d{4})(?:_(\d+)Metric)?/);
+  // Two-terminal chip pattern across every family that uses it:
+  //   R_0805_2012Metric, C_0402_1005Metric, L_1210_3225Metric,
+  //   LED_0603_1608Metric, Fuse_1206_3216Metric, D_/FB_/CP_…
+  // The trailing `Metric` is what makes this unambiguous — anchoring on the
+  // prefix alone would also swallow names like BatteryHolder_Keystone_1042_…
+  // and USB_A_Molex_67643_Horizontal, whose digits are vendor part numbers.
+  const metricChipMatch = name.match(/^[A-Za-z]+_(\d{4,5})_(\d+)Metric/);
+  if (metricChipMatch) {
+    const imperial = metricChipMatch[1]!;
+    return { code: imperial, imperial, metric: metricChipMatch[2]! };
+  }
+
+  // Same families without the metric suffix: C_0603, R_0805.
+  const chipMatch = name.match(/^C[P]?_(\d{4})$/);
   if (chipMatch) {
     const imperial = chipMatch[1]!;
-    const metric = chipMatch[2] ?? IMPERIAL_METRIC_MAP[imperial] ?? null;
     return {
       code: imperial,
       imperial,
-      metric,
+      metric: IMPERIAL_METRIC_MAP[imperial] ?? null,
     };
   }
 

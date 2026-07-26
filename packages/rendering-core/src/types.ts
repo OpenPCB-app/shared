@@ -182,7 +182,17 @@ export interface FootprintRenderSourcePad {
   readonly rotationDeg: number;
   readonly roundrectRatio?: number;
   readonly drillDiameterMm?: number;
+  /**
+   * Primary copper layer. Kept as the first entry of `layers` so existing
+   * consumers (pad colouring, layer-side flipping) keep working unchanged.
+   */
   readonly layer?: string;
+  /**
+   * Every layer the pad belongs to, e.g. `["F.Cu", "F.Paste", "F.Mask"]` for
+   * an SMD pad or `["*.Cu", "*.Mask"]` for a THT one. KiCad carries the full
+   * list; `layer` alone cannot express mask/paste apertures.
+   */
+  readonly layers?: readonly string[];
 }
 
 export interface FootprintRenderSource {

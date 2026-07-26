@@ -559,13 +559,20 @@ export function buildSymbolPreviewFromParsed(
     valueFontSizeMm: symbol.valueFontSizeMm,
   };
 
-  // Preview shows a single representative unit (unit 1, standard body style).
-  // Composing every unit at a preserved origin stacked all gates on top of each
-  // other; multi-unit parts (74HC00, LM358) are placed per-unit in the schematic.
+  // Compose every unit side by side. KiCad draws each unit of a multi-unit part
+  // at the SAME local coordinates, so a unit-1-only preview left the remaining
+  // units' pins coincident — four LM324 op-amp outputs all landed on (7.62, 0)
+  // and any coordinate-based net derivation shorted them together.
+  //
+  // `preserveOrigin` must be off whenever there is more than one unit: it is
+  // what disables the per-unit X translation, and preserving the origin while
+  // composing would stack the units right back on top of each other. Single-unit
+  // symbols keep the preserved origin so their coordinates stay untouched.
+  const composeAllUnits = source.unitCount > 1;
   const model = buildSymbolRenderModel(source, {
-    composeAllUnits: false,
+    composeAllUnits,
     includeHiddenPins: false,
-    preserveOrigin: true,
+    preserveOrigin: !composeAllUnits,
   });
 
   return model;
@@ -602,6 +609,7 @@ export function buildFootprintPreviewFromParsed(
       roundrectRatio: pad.roundrectRatio,
       drillDiameterMm: pad.drillDiameter,
       layer: pad.layers[0],
+      layers: pad.layers,
     };
   });
 
@@ -636,6 +644,20 @@ export function buildFootprintPreviewFromParsed(
       "B.Fab", // KiCad 7
       "F.Fabrication",
       "B.Fabrication", // KiCad 8+
+      // Courtyard is the part's keep-out envelope — the PCB renderer, the
+      // assembly view preset and the auto-placer's overlap legality gate all
+      // expect it. Note it is also the outermost outline, so admitting it
+      // grows the model's bounds (and therefore selection/hit regions) to the
+      // true component extent.
+      "F.CrtYd",
+      "B.CrtYd", // KiCad 7
+      "F.Courtyard",
+      "B.Courtyard", // KiCad 8+
+      // Mask/paste apertures — needed for stencil and gerber fidelity.
+      "F.Mask",
+      "B.Mask",
+      "F.Paste",
+      "B.Paste",
     ],
     includePadLayerNames: ["F.Cu", "B.Cu", "*.Cu"],
   });

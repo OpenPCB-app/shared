@@ -170,3 +170,154 @@ describe("buildFootprintRenderModel", () => {
     expect(model.warnings[0]?.code).toBe("test");
   });
 });
+
+describe("buildFootprintRenderModel — layer filtering", () => {
+  const line = (
+    layer: string | undefined,
+  ): FootprintRenderSource["graphics"][number] => ({
+    kind: "line",
+    a: { x: -1, y: 0 },
+    b: { x: 1, y: 0 },
+    strokeWidthMm: 0.12,
+    layer,
+  });
+
+  const padOn = (
+    id: string,
+    layer: string | undefined,
+    layers?: string[],
+  ): FootprintRenderSource["pads"][number] => ({
+    id,
+    number: "1",
+    shape: "rect",
+    centerMm: { x: 0, y: 0 },
+    widthMm: 1,
+    heightMm: 1,
+    rotationDeg: 0,
+    layer,
+    layers,
+  });
+
+  const sourceWith = (
+    graphics: FootprintRenderSource["graphics"],
+    pads: FootprintRenderSource["pads"] = [padOn("p", "F.Cu")],
+  ): FootprintRenderSource => ({
+    name: "FP",
+    pads,
+    graphics,
+    labels: [],
+    warnings: [],
+  });
+
+  const SILK_AND_COURTYARD = ["F.SilkS", "F.CrtYd"];
+
+  test("an absent allowlist passes every graphic through", () => {
+    const model = buildFootprintRenderModel(
+      sourceWith([line("F.SilkS"), line("Edge.Cuts")]),
+    );
+    expect(model.graphics).toHaveLength(2);
+  });
+
+  test("an allowlist keeps only the named layers", () => {
+    const model = buildFootprintRenderModel(
+      sourceWith([line("F.SilkS"), line("F.CrtYd"), line("Edge.Cuts")]),
+      { includeLayerNames: SILK_AND_COURTYARD },
+    );
+    expect(model.graphics.map((g) => g.layer)).toEqual(["F.SilkS", "F.CrtYd"]);
+  });
+
+  test("a graphic with no layer is dropped when an allowlist is present", () => {
+    const model = buildFootprintRenderModel(
+      sourceWith([line("F.SilkS"), line(undefined)]),
+      { includeLayerNames: SILK_AND_COURTYARD },
+    );
+    expect(model.graphics).toHaveLength(1);
+  });
+
+  test("a pad passes when ANY of its layers is allowed", () => {
+    const model = buildFootprintRenderModel(
+      sourceWith(
+        [],
+        [
+          padOn("smd", "F.Cu", ["F.Cu", "F.Paste", "F.Mask"]),
+          padOn("tht", "*.Cu", ["*.Cu", "*.Mask"]),
+          padOn("silk-only", "F.SilkS", ["F.SilkS"]),
+        ],
+      ),
+      { includePadLayerNames: ["F.Cu", "B.Cu", "*.Cu"] },
+    );
+    expect(model.pads.map((p) => p.id)).toEqual(["smd", "tht"]);
+  });
+
+  test("pad filtering falls back to `layer` when `layers` is absent", () => {
+    const model = buildFootprintRenderModel(
+      sourceWith([], [padOn("legacy", "B.Cu"), padOn("dropped", "F.Mask")]),
+      { includePadLayerNames: ["F.Cu", "B.Cu", "*.Cu"] },
+    );
+    expect(model.pads.map((p) => p.id)).toEqual(["legacy"]);
+  });
+});
+
+describe("buildSymbolRenderModel — multi-unit composition", () => {
+  const pinAt = (
+    id: string,
+    unit: number,
+    y: number,
+  ): SymbolRenderSource["pins"][number] => ({
+    id,
+    name: id,
+    number: id,
+    electricalType: "passive",
+    unit,
+    hidden: false,
+    positionMm: { x: -2.54, y },
+    lengthMm: 2.54,
+    rotationDeg: 0,
+  });
+
+  const threeUnits: SymbolRenderSource = {
+    name: "U",
+    unitCount: 3,
+    referenceText: "U",
+    valueText: "74HC04",
+    warnings: [],
+    pins: [
+      pinAt("1", 1, 2.54),
+      pinAt("2", 1, -2.54),
+      pinAt("3", 2, 2.54),
+      pinAt("4", 2, -2.54),
+      pinAt("5", 3, 2.54),
+      pinAt("6", 3, -2.54),
+    ],
+    graphics: [],
+    labels: [],
+  };
+
+  test("composeAllUnits off keeps unit 1 only", () => {
+    const model = buildSymbolRenderModel(threeUnits, {
+      composeAllUnits: false,
+    });
+    expect(model.pins.map((p) => p.unit)).toEqual([1, 1]);
+  });
+
+  test("composeAllUnits on spreads every unit to a distinct coordinate", () => {
+    const model = buildSymbolRenderModel(threeUnits, {
+      composeAllUnits: true,
+    });
+    expect(model.pins).toHaveLength(6);
+    const coords = new Set(model.pins.map((p) => `${p.anchor.x},${p.anchor.y}`));
+    expect(coords.size).toBe(6);
+  });
+
+  // preserveOrigin disables the per-unit X translation, so composing with it
+  // stacks the units back on top of each other. Guards the pairing used by
+  // kicad-import's buildSymbolPreviewFromParsed.
+  test("composeAllUnits with preserveOrigin re-stacks the units", () => {
+    const model = buildSymbolRenderModel(threeUnits, {
+      composeAllUnits: true,
+      preserveOrigin: true,
+    });
+    const coords = new Set(model.pins.map((p) => `${p.anchor.x},${p.anchor.y}`));
+    expect(coords.size).toBe(2);
+  });
+});

@@ -4,6 +4,7 @@ import type {
   BuildFootprintRenderModelOptions,
   FootprintRenderModel,
   FootprintRenderSource,
+  FootprintRenderSourcePad,
 } from "./types.js";
 
 function filterByLayer(
@@ -17,6 +18,27 @@ function filterByLayer(
     return false;
   }
   return includeLayerNames.includes(layer);
+}
+
+/**
+ * A pad passes when ANY of its layers is allowed. Matching only `layer` (the
+ * primary copper layer) would drop pads whose copper layer differs from the
+ * allowlist even though they carry an allowed mask/paste aperture.
+ */
+function padPassesLayerFilter(
+  includePadLayerNames: readonly string[] | undefined,
+  pad: FootprintRenderSourcePad,
+): boolean {
+  if (!includePadLayerNames || includePadLayerNames.length === 0) {
+    return true;
+  }
+  const layers =
+    pad.layers && pad.layers.length > 0
+      ? pad.layers
+      : pad.layer
+        ? [pad.layer]
+        : [];
+  return layers.some((layer) => includePadLayerNames.includes(layer));
 }
 
 export function buildFootprintRenderModel(
@@ -33,7 +55,7 @@ export function buildFootprintRenderModel(
 
   const pads = options.includePadLayerNames
     ? source.pads.filter((pad) =>
-        filterByLayer(options.includePadLayerNames, pad.layer),
+        padPassesLayerFilter(options.includePadLayerNames, pad),
       )
     : source.pads;
 
