@@ -82,8 +82,29 @@ ${TOKENS}
   .menu.open .wrap{ display: flex; flex-direction: column; gap: 2px; }
   .menu.open a{ padding: 11px 12px; border-radius: 8px; color: var(--_text-2); font-weight: 500; font-size: 15px; }
   .menu.open a:hover{ background: var(--_surface); color: var(--_text); }
+  /* Whatever the row drops below is still reachable here. */
+  .menu.open .menu-cta{ display: flex; gap: 10px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--_hairline); }
+  .menu.open .menu-cta a{ flex: 1; justify-content: center; padding: 11px 14px; }
+  /* .menu.open a above sets a link colour; re-assert the button colours or the
+     primary CTA renders dark-on-violet (unreadable in the light theme). */
+  .menu.open .menu-cta a.btn-primary{ color: #fff; }
+  .menu.open .menu-cta a.btn-ghost{ color: var(--_text); }
+  .menu.open .menu-cta a:hover{ background: initial; }
+  .menu.open .menu-cta a.btn-primary:hover{ transform: none; }
+  .menu.open .menu-cta a.btn-ghost:hover{ background: var(--_surface-2); }
 }
-@media (max-width: 560px){ .gh-pill span{ display: none; } }
+.menu-cta{ display: none; }
+
+/* Below ~560px the row runs out of width. Shed the optional items in priority
+   order — GitHub pill, then Sign in, then Download — so brand + theme + burger
+   always fit. Everything shed stays available in the hamburger menu. */
+@media (max-width: 560px){
+  .nav-row{ gap: 12px; height: 58px; }
+  .gh-pill{ display: none; }
+  .cta{ gap: 8px; }
+}
+@media (max-width: 430px){ .cta .btn-ghost{ display: none; } }
+@media (max-width: 360px){ .cta .btn-primary{ display: none; } }
 `;
 
 export const FOOTER_CSS = /* css */ `

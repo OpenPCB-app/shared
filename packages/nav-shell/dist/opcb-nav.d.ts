@@ -24,6 +24,13 @@ export declare class OpcbNav extends HTMLElement {
     private navLinksHtml;
     private searchHtml;
     private ctaHtml;
+    /**
+     * Mirror of the row CTAs inside the hamburger menu. The row sheds these on
+     * narrow viewports (see NAV_CSS breakpoints), so without this they would be
+     * unreachable on a phone. GitHub is included because the pill is the first
+     * thing dropped.
+     */
+    private menuCtaHtml;
     private readonly handleClick;
     private readonly handleSubmit;
     private toggleTheme;

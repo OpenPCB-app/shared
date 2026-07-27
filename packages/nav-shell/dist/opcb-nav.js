@@ -86,7 +86,7 @@ export class OpcbNav extends HTMLElement {
     </div>
   </div>
   <div class="menu${this.menuOpen ? " open" : ""}">
-    <div class="wrap">${this.navLinksHtml()}</div>
+    <div class="wrap">${this.navLinksHtml()}${this.menuCtaHtml(session)}</div>
   </div>
 </header>`;
     }
@@ -111,6 +111,26 @@ export class OpcbNav extends HTMLElement {
       <a class="btn btn-primary btn-sm" href="${this.url("marketing", "/#download")}">Download</a>
       <a class="btn btn-ghost btn-sm" href="${this.url("app", "/sign-in")}" data-app>Sign in</a>
     </span>`;
+    }
+    /**
+     * Mirror of the row CTAs inside the hamburger menu. The row sheds these on
+     * narrow viewports (see NAV_CSS breakpoints), so without this they would be
+     * unreachable on a phone. GitHub is included because the pill is the first
+     * thing dropped.
+     */
+    menuCtaHtml(session) {
+        const github = `<a class="btn btn-ghost btn-sm" href="https://github.com/OpenPCB-app/OpenPCB" target="_blank" rel="noopener noreferrer">GitHub</a>`;
+        if (session) {
+            return `<div class="menu-cta">
+        <a class="btn btn-primary btn-sm" href="${this.url("app", "/app")}" data-app>Open workspace</a>
+        ${github}
+      </div>`;
+        }
+        return `<div class="menu-cta">
+      <a class="btn btn-primary btn-sm" href="${this.url("marketing", "/#download")}">Download</a>
+      <a class="btn btn-ghost btn-sm" href="${this.url("app", "/sign-in")}" data-app>Sign in</a>
+      ${github}
+    </div>`;
     }
     /* ----------------------------- events ----------------------------- */
     handleClick = (e) => {

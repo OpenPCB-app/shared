@@ -80,12 +80,12 @@ export class OpcbFooter extends HTMLElement {
         <h5>Resources</h5>
         <a href="${REPO}" target="_blank" rel="noopener noreferrer">GitHub</a>
         <a href="${REPO}/issues" target="_blank" rel="noopener noreferrer">Issues</a>
-        <a href="${REPO}/blob/main/ROADMAP.md" target="_blank" rel="noopener noreferrer">Roadmap</a>
+        <a href="${REPO}/blob/master/ROADMAP.md" target="_blank" rel="noopener noreferrer">Roadmap</a>
         <a href="${this.app("/sign-in")}" data-app>Sign in</a>
       </div>
       <div class="foot-col">
         <h5>License</h5>
-        <a href="${REPO}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">AGPL-3.0</a>
+        <a href="${REPO}/blob/master/LICENSE" target="_blank" rel="noopener noreferrer">AGPL-3.0</a>
         <a href="${this.mk("/#commercial")}">Commercial</a>
         <a href="${REPO}/security/policy" target="_blank" rel="noopener noreferrer">Security</a>
       </div>
