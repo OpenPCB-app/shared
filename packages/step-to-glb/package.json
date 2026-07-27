@@ -1,6 +1,6 @@
 {
   "name": "@openpcb/step-to-glb",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "STEP file → GLB conversion via occt-import-js WASM. Browser worker and Node/Bun entries.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
