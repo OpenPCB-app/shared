@@ -235,13 +235,35 @@ async function sha256(bytes: ArrayBuffer): Promise<string> {
   return toHex(await crypto.subtle.digest("SHA-256", bytes));
 }
 
+/**
+ * One OCCT module for the whole process.
+ *
+ * initOcctImportJs() instantiates a fresh Emscripten module with its own heap,
+ * and nothing ever releases it — so converting a directory leaked one runtime
+ * per file. Past roughly 120 conversions the process can no longer stand up
+ * another and embind starts handing back null function pointers, surfacing as
+ * "RuntimeError: access to a null reference (evaluating 'invoker(...)')". That
+ * reads like corrupt geometry but is really exhaustion, and it lands on
+ * whichever file happens to be next rather than on a faulty one.
+ *
+ * ReadStepFile is a synchronous WASM call, so a single shared instance is safe
+ * for sequential and concurrent callers alike: no await splits a conversion, so
+ * two callers can never be inside the module at the same time.
+ */
+let occtModulePromise: Promise<OcctImportJsModule> | null = null;
+
+function getOcctModule(): Promise<OcctImportJsModule> {
+  occtModulePromise ??= initOcctImportJs() as Promise<OcctImportJsModule>;
+  return occtModulePromise;
+}
+
 export async function convertStepToGlbNode(
   stepBytes: ArrayBuffer,
   params: TessellationParams = {},
   modelRef?: Model3DRef | null,
   options: StepToGlbConversionOptions = {},
 ): Promise<ConversionResult> {
-  const occt = (await initOcctImportJs()) as OcctImportJsModule;
+  const occt = await getOcctModule();
   const result = occt.ReadStepFile(new Uint8Array(stepBytes), params ?? null);
   if (!result.success) {
     return errorResult("occt_read_failed", result.error ?? "OCCT could not read the STEP file");
