@@ -38,6 +38,8 @@ export interface InspectFootprintItem {
   mountType: string;
   padCount: number;
   packageCode: {
+    /** Canonical package code, e.g. "0805". Falls back to the footprint name. */
+    code?: string;
     imperial: string | null;
     metric: string | null;
   };

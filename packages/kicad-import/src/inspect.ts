@@ -51,6 +51,8 @@ export interface NormalizedImportedFootprint {
   mountType: string;
   padCount: number;
   packageCode: {
+    /** Canonical package code, e.g. "0805". Falls back to the footprint name. */
+    code?: string;
     imperial: string | null;
     metric: string | null;
   };
@@ -170,6 +172,7 @@ function normalizeFootprint(
     mountType,
     padCount: footprint.pads.length,
     packageCode: {
+      code: pkg.code,
       imperial: pkg.imperial,
       metric: pkg.metric,
     },
