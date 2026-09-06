@@ -1,13 +1,11 @@
 import { createHash } from "node:crypto";
-import type {
-  FootprintRenderModel,
-  SymbolRenderModel,
-} from "@openpcb/rendering-core";
+import type { SymbolRenderModel } from "@openpcb/rendering-core";
 import {
   parseKicadFootprint,
   parseKicadSymbolLib,
   type ParsedKicadFootprint,
   type ParsedKicadSymbol,
+  type ParsedPad,
 } from "@openpcb/kicad-parsers";
 import { extractPackageCode } from "./heuristics.js";
 import { classifyModel3DLinks } from "./model-linker.js";
@@ -17,6 +15,7 @@ import {
 } from "./build-preview-models.js";
 import { KicadImportValidationError as ImportValidationError } from "./errors.js";
 import type {
+  FootprintPreviewModel,
   ImportWarning,
   InspectKicadRequest,
   InspectKicadResponse,
@@ -59,7 +58,7 @@ export interface NormalizedImportedFootprint {
   tags: string[];
   sourceHash: string;
   warnings: Array<{ code: string; message: string }>;
-  preview: FootprintRenderModel;
+  preview: FootprintPreviewModel;
 }
 
 export interface ParsedImportBundle {
@@ -148,6 +147,16 @@ function normalizeSymbol(
   };
 }
 
+/**
+ * Electrical pads only. Unnumbered pads — NPTH mounting holes, fiducials and
+ * the stencil-only paste sub-apertures that segment a thermal pad — carry no
+ * net, so counting them would over-report a part's pin count (a QFN-56 with a
+ * segmented exposed pad reads 73 otherwise).
+ */
+function countElectricalPads(pads: readonly ParsedPad[]): number {
+  return pads.filter((pad) => pad.number.trim().length > 0).length;
+}
+
 function normalizeFootprint(
   footprint: ParsedKicadFootprint,
   sourceHash: string,
@@ -170,7 +179,7 @@ function normalizeFootprint(
     name: footprint.name,
     description: footprint.description,
     mountType,
-    padCount: footprint.pads.length,
+    padCount: countElectricalPads(footprint.pads),
     packageCode: {
       code: pkg.code,
       imperial: pkg.imperial,

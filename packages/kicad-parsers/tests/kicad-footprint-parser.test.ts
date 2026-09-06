@@ -188,3 +188,39 @@ describe("kicad-footprint-parser", () => {
     expect(t?.text?.mirrored).toBe(true);
   });
 });
+
+describe("kicad-footprint-parser — drills", () => {
+  test("round drill sets drillDiameter and no slot", () => {
+    const src = `(footprint "D1" (layer F.Cu)
+      (pad "1" thru_hole circle (at 0 0) (size 1.7 1.7) (drill 1.02)
+        (layers "*.Cu" "*.Mask")))`;
+    const pad = parseKicadFootprint(src).pads[0]!;
+    expect(pad.drillDiameter).toBeCloseTo(1.02, 5);
+    expect(pad.drillSlot).toBeUndefined();
+    expect(pad.drillOffset).toBeUndefined();
+  });
+
+  test("oval drill records the slot and mirrors the narrow axis", () => {
+    const src = `(footprint "D2" (layer F.Cu)
+      (pad "1" thru_hole rect (at 0 0) (size 3.5 3.5) (drill oval 1 3)
+        (layers "*.Cu" "*.Mask"))
+      (pad "2" thru_hole rect (at 6 0) (size 3.5 3.5) (drill oval 3 1)
+        (layers "*.Cu" "*.Mask")))`;
+    const [tall, wide] = parseKicadFootprint(src).pads;
+    expect(tall!.drillSlot).toEqual({ width: 1, height: 3 });
+    expect(tall!.drillDiameter).toBeCloseTo(1, 5);
+    expect(wide!.drillSlot).toEqual({ width: 3, height: 1 });
+    expect(wide!.drillDiameter).toBeCloseTo(1, 5);
+  });
+
+  test("oval drill keeps its offset", () => {
+    const src = `(footprint "D3" (layer F.Cu)
+      (pad "1" thru_hole oval (at 0 0) (size 2 3.4)
+        (drill oval 0.6 1.7 (offset 0.1 -0.2))
+        (layers "*.Cu" "*.Mask")))`;
+    const pad = parseKicadFootprint(src).pads[0]!;
+    expect(pad.drillSlot).toEqual({ width: 0.6, height: 1.7 });
+    expect(pad.drillDiameter).toBeCloseTo(0.6, 5);
+    expect(pad.drillOffset).toEqual({ x: 0.1, y: -0.2 });
+  });
+});

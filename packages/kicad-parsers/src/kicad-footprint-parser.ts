@@ -31,6 +31,12 @@ export interface ParsedPad {
   layers: string[];
   roundrectRatio?: number;
   drillDiameter?: number;
+  /**
+   * Slotted drill from KiCad `(drill oval W H)`, in mm. Present only for oval
+   * drills; `drillDiameter` then mirrors the narrow axis so round-drill
+   * consumers stay correct (never over-report the hole they can machine).
+   */
+  drillSlot?: { width: number; height: number };
   drillOffset?: { x: number; y: number };
 }
 
@@ -371,8 +377,15 @@ export function parseKicadFootprint(source: string): ParsedKicadFootprint {
     }
 
     if (drillNode) {
-      pad.drillDiameter =
-        getNumberValue(drillNode, 1) ?? getNumberValue(drillNode) ?? undefined;
+      if (getStringValue(drillNode, 1) === "oval") {
+        const slotWidth = getNumberValue(drillNode, 2) ?? 0;
+        const slotHeight = getNumberValue(drillNode, 3) ?? slotWidth;
+        pad.drillSlot = { width: slotWidth, height: slotHeight };
+        pad.drillDiameter = Math.min(slotWidth, slotHeight);
+      } else {
+        pad.drillDiameter =
+          getNumberValue(drillNode, 1) ?? getNumberValue(drillNode) ?? undefined;
+      }
       const offsetNode = findNode(drillNode, "offset");
       if (offsetNode) {
         pad.drillOffset = {

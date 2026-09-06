@@ -9,6 +9,8 @@ import {
   buildFootprintPreviewFromParsed,
   buildSymbolPreviewFromParsed,
 } from "./build-preview-models.js";
+import { parseImportBundle } from "./inspect.js";
+import { validateFootprintPads } from "./validate-pads.js";
 
 // Fixtures are built as parsed structures rather than loaded from .kicad_mod /
 // .kicad_sym files: this package is released via `git subtree split`, so a test
@@ -154,6 +156,108 @@ describe("buildFootprintPreviewFromParsed — pad layers", () => {
       footprint([], [pad("1", 0, ["F.SilkS"])]),
     );
     expect(model.pads).toHaveLength(0);
+  });
+});
+
+describe("buildFootprintPreviewFromParsed — slotted drills", () => {
+  test("emits drillSlotMm and keeps drillDiameterMm on the narrow axis", () => {
+    const slotted: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillSlot: { width: 1, height: 3 },
+      drillDiameter: 1,
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [slotted]));
+    expect(model.pads[0]!.drillSlotMm).toEqual({ widthMm: 1, heightMm: 3 });
+    expect(model.pads[0]!.drillDiameterMm).toBe(1);
+  });
+
+  test("a round drill emits no slot", () => {
+    const round: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillDiameter: 0.65,
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [round]));
+    expect(model.pads[0]!.drillSlotMm).toBeUndefined();
+  });
+});
+
+describe("buildFootprintPreviewFromParsed — paste sub-pads", () => {
+  test("keeps an unnumbered paste-only pad, tagged role paste", () => {
+    const model = buildFootprintPreviewFromParsed(
+      footprint([], [pad("1", -1), pad("", 0, ["F.Paste"])]),
+    );
+    expect(model.pads).toHaveLength(2);
+    const sub = model.pads.find((p) => p.role === "paste");
+    expect(sub!.number).toBe("");
+    expect(sub!.layers).toEqual(["F.Paste"]);
+  });
+
+  test("still drops an unnumbered pad with neither copper nor paste", () => {
+    const model = buildFootprintPreviewFromParsed(
+      footprint([], [pad("", 0, ["F.SilkS"])]),
+    );
+    expect(model.pads).toHaveLength(0);
+  });
+
+  test("a numbered paste-only pad is not a sub-pad and stays dropped", () => {
+    const model = buildFootprintPreviewFromParsed(
+      footprint([], [pad("1", 0, ["F.Paste"])]),
+    );
+    expect(model.pads).toHaveLength(0);
+  });
+
+  test("paste sub-pads do not widen the bounds", () => {
+    const withoutSub = buildFootprintPreviewFromParsed(
+      footprint([], [pad("1", 0)]),
+    );
+    const withSub = buildFootprintPreviewFromParsed(
+      footprint([], [pad("1", 0), pad("", 20, ["F.Paste"])]),
+    );
+    expect(withSub.bounds).toEqual(withoutSub.bounds);
+  });
+});
+
+const QFN_WITH_SEGMENTED_EP = `(footprint "QFN-4-1EP_TEST"
+  (layer "F.Cu")
+  (attr smd)
+  (pad "1" smd roundrect (at -1 -0.5) (size 0.8 0.4) (layers "F.Cu" "F.Paste" "F.Mask"))
+  (pad "2" smd roundrect (at -1 0.5) (size 0.8 0.4) (layers "F.Cu" "F.Paste" "F.Mask"))
+  (pad "3" smd roundrect (at 1 0.5) (size 0.8 0.4) (layers "F.Cu" "F.Paste" "F.Mask"))
+  (pad "4" smd roundrect (at 1 -0.5) (size 0.8 0.4) (layers "F.Cu" "F.Paste" "F.Mask"))
+  (pad "" smd roundrect (at -0.3 -0.3) (size 0.4 0.4) (layers "F.Paste"))
+  (pad "" smd roundrect (at 0.3 -0.3) (size 0.4 0.4) (layers "F.Paste"))
+  (pad "" smd roundrect (at -0.3 0.3) (size 0.4 0.4) (layers "F.Paste"))
+  (pad "" smd roundrect (at 0.3 0.3) (size 0.4 0.4) (layers "F.Paste"))
+)`;
+
+describe("QFN with a segmented exposed pad", () => {
+  const bundle = parseImportBundle({
+    footprints: [
+      { fileName: "QFN-4-1EP_TEST.kicad_mod", content: QFN_WITH_SEGMENTED_EP },
+    ],
+  });
+  const normalized = bundle.normalizedFootprints[0]!;
+
+  test("padCount counts the 4 numbered pads only", () => {
+    expect(normalized.padCount).toBe(4);
+  });
+
+  test("the preview carries all 4 paste sub-pads", () => {
+    expect(normalized.preview.pads).toHaveLength(8);
+    expect(normalized.preview.pads.filter((p) => p.role === "paste")).toHaveLength(
+      4,
+    );
+  });
+
+  test("strict pad validation ignores the paste sub-pads", () => {
+    expect(() =>
+      validateFootprintPads({
+        name: normalized.name,
+        pads: normalized.preview.pads,
+      }),
+    ).not.toThrow();
   });
 });
 

@@ -3,11 +3,17 @@
 // number, and pin numbers from the paired symbol must be a subset of pad
 // numbers (so net-pad correlation never silently fails on the PCB tab).
 
-import type {
-  FootprintRenderSourcePad,
-  SymbolRenderSource,
-} from "@openpcb/rendering-core";
+import type { SymbolRenderSource } from "@openpcb/rendering-core";
 import { KicadImportValidationError } from "./errors.js";
+import type { FootprintPreviewPad } from "./types.js";
+
+/**
+ * Stencil-only sub-apertures carry no copper and no net. They are never
+ * electrical, so no pad count and no pin binding may see them.
+ */
+function isElectricalPad(pad: FootprintPreviewPad): boolean {
+  return pad.role !== "paste";
+}
 
 export interface SymbolPinsLike {
   readonly name: string;
@@ -20,7 +26,7 @@ export interface SymbolPinsLike {
 
 export interface FootprintWithPads {
   readonly name: string;
-  readonly pads: readonly FootprintRenderSourcePad[];
+  readonly pads: readonly FootprintPreviewPad[];
 }
 
 export interface PadValidationOptions {
@@ -54,7 +60,10 @@ export function validateFootprintPads(
   }
 
   const empties: number[] = [];
-  pads.forEach((pad: FootprintRenderSourcePad, index: number) => {
+  pads.forEach((pad: FootprintPreviewPad, index: number) => {
+    if (!isElectricalPad(pad)) {
+      return;
+    }
     if ((pad.number ?? "").trim().length === 0) {
       empties.push(index);
     }
@@ -71,7 +80,7 @@ export function validateSymbolPinsCoverFootprintPads(
   footprint: FootprintWithPads,
 ): void {
   const padNumbers = new Set(
-    footprint.pads.map((p) => (p.number ?? "").trim()),
+    footprint.pads.filter(isElectricalPad).map((p) => (p.number ?? "").trim()),
   );
   const missing: string[] = [];
   const sym = symbol as SymbolPinsLike;

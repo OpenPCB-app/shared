@@ -17,7 +17,9 @@ import {
 import type {
   ParsedKicadFootprint,
   ParsedKicadSymbol,
+  ParsedPad,
 } from "@openpcb/kicad-parsers";
+import type { FootprintPreviewModel, FootprintPreviewPad } from "./types.js";
 
 type SNode = Array<string | number | SNode>;
 
@@ -578,40 +580,105 @@ export function buildSymbolPreviewFromParsed(
   return model;
 }
 
+/** Graphic layers admitted into a footprint preview. */
+const PREVIEW_GRAPHIC_LAYERS: readonly string[] = [
+  "F.SilkS",
+  "B.SilkS", // KiCad 7
+  "F.Silkscreen",
+  "B.Silkscreen", // KiCad 8+
+  "F.Fab",
+  "B.Fab", // KiCad 7
+  "F.Fabrication",
+  "B.Fabrication", // KiCad 8+
+  // Courtyard is the part's keep-out envelope — the PCB renderer, the
+  // assembly view preset and the auto-placer's overlap legality gate all
+  // expect it. Note it is also the outermost outline, so admitting it
+  // grows the model's bounds (and therefore selection/hit regions) to the
+  // true component extent.
+  "F.CrtYd",
+  "B.CrtYd", // KiCad 7
+  "F.Courtyard",
+  "B.Courtyard", // KiCad 8+
+  // Mask/paste apertures — needed for stencil and gerber fidelity.
+  "F.Mask",
+  "B.Mask",
+  "F.Paste",
+  "B.Paste",
+];
+
+/** Copper layers a pad can claim. Also the preview's pad allowlist. */
+const COPPER_PAD_LAYERS: readonly string[] = ["F.Cu", "B.Cu", "*.Cu"];
+const PASTE_PAD_LAYERS: readonly string[] = ["F.Paste", "B.Paste"];
+
+/**
+ * A stencil-only sub-aperture: the unnumbered paste windows KiCad uses to
+ * segment a thermal/exposed pad. Numbered pads and anything carrying copper
+ * are excluded, so nothing electrical can be mistaken for one.
+ */
+function isPasteOnlyPad(pad: ParsedPad): boolean {
+  if ((pad.number ?? "").trim().length > 0) {
+    return false;
+  }
+  return (
+    pad.layers.some((layer) => PASTE_PAD_LAYERS.includes(layer)) &&
+    !pad.layers.some((layer) => COPPER_PAD_LAYERS.includes(layer))
+  );
+}
+
+function footprintPadFromParsed(
+  pad: ParsedPad,
+  index: number,
+  warnings: PreviewWarning[],
+): FootprintPreviewPad {
+  const isRenderedShape =
+    pad.shape === "circle" ||
+    pad.shape === "rect" ||
+    pad.shape === "oval" ||
+    pad.shape === "roundrect";
+
+  if (!isRenderedShape) {
+    warnings.push({
+      code: "footprint_pad_shape_degraded",
+      message: `Pad ${pad.number || index + 1} shape '${pad.shape}' rendered as rect`,
+    });
+  }
+
+  const normalizedNumber = (pad.number ?? "").trim();
+  return {
+    id: `${normalizedNumber || "?"}:${index}`,
+    number: normalizedNumber,
+    shape: isRenderedShape ? pad.shape : "rect",
+    centerMm: { x: pad.position.x, y: pad.position.y },
+    widthMm: pad.size.width,
+    heightMm: pad.size.height,
+    rotationDeg: pad.rotation,
+    roundrectRatio: pad.roundrectRatio,
+    drillDiameterMm: pad.drillDiameter,
+    drillSlotMm: pad.drillSlot && {
+      widthMm: pad.drillSlot.width,
+      heightMm: pad.drillSlot.height,
+    },
+    role: isPasteOnlyPad(pad) ? "paste" : undefined,
+    layer: pad.layers[0],
+    layers: pad.layers,
+  };
+}
+
 export function buildFootprintPreviewFromParsed(
   footprint: ParsedKicadFootprint,
-): FootprintRenderModel {
+): FootprintPreviewModel {
   const warnings: PreviewWarning[] = [...footprint.warnings];
 
-  const pads: FootprintRenderSourcePad[] = footprint.pads.map((pad, index) => {
-    const isRenderedShape =
-      pad.shape === "circle" ||
-      pad.shape === "rect" ||
-      pad.shape === "oval" ||
-      pad.shape === "roundrect";
-
-    if (!isRenderedShape) {
-      warnings.push({
-        code: "footprint_pad_shape_degraded",
-        message: `Pad ${pad.number || index + 1} shape '${pad.shape}' rendered as rect`,
-      });
-    }
-
-    const normalizedNumber = (pad.number ?? "").trim();
-    return {
-      id: `${normalizedNumber || "?"}:${index}`,
-      number: normalizedNumber,
-      shape: isRenderedShape ? pad.shape : "rect",
-      centerMm: { x: pad.position.x, y: pad.position.y },
-      widthMm: pad.size.width,
-      heightMm: pad.size.height,
-      rotationDeg: pad.rotation,
-      roundrectRatio: pad.roundrectRatio,
-      drillDiameterMm: pad.drillDiameter,
-      layer: pad.layers[0],
-      layers: pad.layers,
-    };
-  });
+  const allPads = footprint.pads.map((pad, index) =>
+    footprintPadFromParsed(pad, index, warnings),
+  );
+  // Paste sub-pads carry no copper, so they are held back from the copper-only
+  // builder (its pad allowlist would drop them, and its bounds must stay the
+  // copper extent) and appended to the finished model instead.
+  const pasteSubPads = allPads.filter((pad) => pad.role === "paste");
+  const pads: FootprintRenderSourcePad[] = allPads.filter(
+    (pad) => pad.role !== "paste",
+  );
 
   const graphics: PreviewGraphic[] = [];
   const labels: PreviewLabel[] = [];
@@ -634,31 +701,12 @@ export function buildFootprintPreviewFromParsed(
     warnings,
   };
 
-  return buildFootprintRenderModel(source, {
-    includeLayerNames: [
-      "F.SilkS",
-      "B.SilkS", // KiCad 7
-      "F.Silkscreen",
-      "B.Silkscreen", // KiCad 8+
-      "F.Fab",
-      "B.Fab", // KiCad 7
-      "F.Fabrication",
-      "B.Fabrication", // KiCad 8+
-      // Courtyard is the part's keep-out envelope — the PCB renderer, the
-      // assembly view preset and the auto-placer's overlap legality gate all
-      // expect it. Note it is also the outermost outline, so admitting it
-      // grows the model's bounds (and therefore selection/hit regions) to the
-      // true component extent.
-      "F.CrtYd",
-      "B.CrtYd", // KiCad 7
-      "F.Courtyard",
-      "B.Courtyard", // KiCad 8+
-      // Mask/paste apertures — needed for stencil and gerber fidelity.
-      "F.Mask",
-      "B.Mask",
-      "F.Paste",
-      "B.Paste",
-    ],
-    includePadLayerNames: ["F.Cu", "B.Cu", "*.Cu"],
+  const model = buildFootprintRenderModel(source, {
+    includeLayerNames: PREVIEW_GRAPHIC_LAYERS,
+    includePadLayerNames: COPPER_PAD_LAYERS,
   });
+
+  return pasteSubPads.length > 0
+    ? { ...model, pads: [...model.pads, ...pasteSubPads] }
+    : model;
 }

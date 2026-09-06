@@ -5,8 +5,38 @@
  */
 import type {
   FootprintRenderModel,
+  FootprintRenderSourcePad,
   SymbolRenderModel,
 } from "@openpcb/rendering-core";
+
+/** Slotted drill footprint, from KiCad `(drill oval W H)`. */
+export interface FootprintPreviewDrillSlotMm {
+  readonly widthMm: number;
+  readonly heightMm: number;
+}
+
+/**
+ * Preview pad. Widens the render-core pad with the two facts KiCad carries
+ * that a plain copper pad cannot express.
+ */
+export interface FootprintPreviewPad extends FootprintRenderSourcePad {
+  /**
+   * Present only for slotted (oval) drills. `drillDiameterMm` still carries
+   * the narrow axis, so round-drill consumers degrade safely instead of
+   * silently machining a too-small hole.
+   */
+  readonly drillSlotMm?: FootprintPreviewDrillSlotMm;
+  /**
+   * `"paste"` marks an unnumbered stencil-only sub-aperture — the paste
+   * windows KiCad uses to segment a thermal/exposed pad. It has no copper and
+   * no net, so it must never enter a pad count or a pin↔pad binding.
+   */
+  readonly role?: "paste";
+}
+
+export interface FootprintPreviewModel extends FootprintRenderModel {
+  readonly pads: readonly FootprintPreviewPad[];
+}
 
 export interface ImportFileInput {
   fileName: string;
@@ -44,7 +74,7 @@ export interface InspectFootprintItem {
     metric: string | null;
   };
   warningCount: number;
-  preview: FootprintRenderModel;
+  preview: FootprintPreviewModel;
 }
 
 export type Model3DCandidateAssociation =
