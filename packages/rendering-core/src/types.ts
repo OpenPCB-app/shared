@@ -166,6 +166,15 @@ export interface SymbolRenderModel {
   readonly warnings: readonly PreviewWarning[];
 }
 
+/**
+ * Oblong drill footprint. Declared here, next to the pad that carries it, so
+ * DRC, export and rendering read one type.
+ */
+export interface FootprintPadDrillSlotMm {
+  readonly widthMm: number;
+  readonly heightMm: number;
+}
+
 export interface FootprintRenderSourcePad {
   readonly id: string;
   readonly number: string;
@@ -182,6 +191,28 @@ export interface FootprintRenderSourcePad {
   readonly rotationDeg: number;
   readonly roundrectRatio?: number;
   readonly drillDiameterMm?: number;
+  /**
+   * Oblong drill from KiCad `(drill oval W H)`: `widthMm` along the pad's
+   * local X, `heightMm` along its local Y; the tool diameter is
+   * `min(widthMm, heightMm)` and `drillDiameterMm` mirrors it, so round-drill
+   * consumers degrade safely; `max ≤ min` degenerates to a round hole.
+   */
+  readonly drillSlotMm?: FootprintPadDrillSlotMm;
+  /**
+   * Drill centre offset from the pad centre in the pad's LOCAL frame (mm),
+   * from KiCad `(drill … (offset X Y))`. Absent = the drill is centred.
+   * Consumers transform it with the pad's full placement transform (mirror,
+   * then rotation), exactly like the copper outline.
+   */
+  readonly drillOffsetMm?: PointMm;
+  /**
+   * Whether the drill wall is plated. ABSENT MEANS PLATED (every pre-existing
+   * drilled pad keeps its meaning). `false` = a non-plated hole (KiCad
+   * `np_thru_hole`): the drill reaches the fab as an NPTH and any copper the
+   * pad declares is a ring around a non-plated hole. Meaningless without a
+   * drill.
+   */
+  readonly plated?: boolean;
   /**
    * Primary copper layer. Kept as the first entry of `layers` so existing
    * consumers (pad colouring, layer-side flipping) keep working unchanged.

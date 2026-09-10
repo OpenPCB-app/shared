@@ -183,6 +183,136 @@ describe("buildFootprintPreviewFromParsed — slotted drills", () => {
   });
 });
 
+describe("buildFootprintPreviewFromParsed — drill offsets", () => {
+  test("emits drillOffsetMm for an off-centre drill", () => {
+    const offset: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillDiameter: 1,
+      drillOffset: { x: 0.3, y: -0.1 },
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [offset]));
+    expect(model.pads[0]!.drillOffsetMm).toEqual({ x: 0.3, y: -0.1 });
+  });
+
+  // `(offset 0 0)` is KiCad's default; emitting it would change the shape of
+  // pads that are in fact centred.
+  test("a zero offset leaves the attribute absent", () => {
+    const centred: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillDiameter: 1,
+      drillOffset: { x: 0, y: 0 },
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [centred]));
+    expect("drillOffsetMm" in model.pads[0]!).toBe(false);
+  });
+
+  test("a drill with no offset node leaves the attribute absent", () => {
+    const plain: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillDiameter: 1,
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [plain]));
+    expect("drillOffsetMm" in model.pads[0]!).toBe(false);
+  });
+
+  test("an offset slotted drill carries both the slot and the offset", () => {
+    const slottedOffset: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillSlot: { width: 1, height: 3 },
+      drillDiameter: 1,
+      drillOffset: { x: 0.3, y: -0.1 },
+    };
+    const model = buildFootprintPreviewFromParsed(
+      footprint([], [slottedOffset]),
+    );
+    expect(model.pads[0]!.drillSlotMm).toEqual({ widthMm: 1, heightMm: 3 });
+    expect(model.pads[0]!.drillOffsetMm).toEqual({ x: 0.3, y: -0.1 });
+  });
+});
+
+describe("buildFootprintPreviewFromParsed — plating", () => {
+  test("states plated=false for a non-plated through hole", () => {
+    const npth: ParsedPad = {
+      ...pad("", 0, ["*.Cu", "*.Mask"]),
+      type: "np_thru_hole",
+      shape: "circle",
+      size: { width: 3.2, height: 3.2 },
+      drillDiameter: 3.2,
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [npth]));
+    expect(model.pads).toHaveLength(1);
+    expect(model.pads[0]!.plated).toBe(false);
+  });
+
+  // Absent means plated: the attribute must not appear on pads that predate
+  // it, or a consumer reading `plated ?? true` would see a changed shape.
+  test("leaves the attribute absent on a plated through hole", () => {
+    const pth: ParsedPad = {
+      ...pad("1", 0, ["*.Cu", "*.Mask"]),
+      type: "thru_hole",
+      drillDiameter: 0.8,
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [pth]));
+    expect("plated" in model.pads[0]!).toBe(false);
+  });
+
+  test("leaves the attribute absent on an SMD pad", () => {
+    const model = buildFootprintPreviewFromParsed(footprint([]));
+    expect("plated" in model.pads[0]!).toBe(false);
+  });
+
+  test("leaves the attribute absent on a paste sub-pad", () => {
+    const model = buildFootprintPreviewFromParsed(
+      footprint([], [pad("1", -1), pad("", 0, ["F.Paste"])]),
+    );
+    const sub = model.pads.find((p) => p.role === "paste");
+    expect(sub).toBeDefined();
+    expect("plated" in sub!).toBe(false);
+  });
+});
+
+describe("buildFootprintPreviewFromParsed — circle pads", () => {
+  test("normalizes an unequal circle to a disc of widthMm, with a warning", () => {
+    const unequal: ParsedPad = {
+      ...pad("1", 0),
+      shape: "circle",
+      size: { width: 1.2, height: 0.6 },
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [unequal]));
+    expect(model.pads[0]!.widthMm).toBe(1.2);
+    expect(model.pads[0]!.heightMm).toBe(1.2);
+    expect(model.warnings.map((warning) => warning.code)).toContain(
+      "footprint_pad_circle_size_normalized",
+    );
+  });
+
+  test("an equal circle passes through unwarned", () => {
+    const equal: ParsedPad = {
+      ...pad("1", 0),
+      shape: "circle",
+      size: { width: 1.2, height: 1.2 },
+    };
+    const model = buildFootprintPreviewFromParsed(footprint([], [equal]));
+    expect(model.pads[0]!.heightMm).toBe(1.2);
+    expect(model.warnings.map((warning) => warning.code)).not.toContain(
+      "footprint_pad_circle_size_normalized",
+    );
+  });
+
+  test("a non-circle pad keeps its unequal size", () => {
+    const model = buildFootprintPreviewFromParsed(footprint([], [pad("1", 0)]));
+    expect(model.pads[0]!.widthMm).toBe(1.5);
+    expect(model.pads[0]!.heightMm).toBe(0.6);
+    expect(model.warnings.map((warning) => warning.code)).not.toContain(
+      "footprint_pad_circle_size_normalized",
+    );
+  });
+});
+
 describe("buildFootprintPreviewFromParsed — paste sub-pads", () => {
   test("keeps an unnumbered paste-only pad, tagged role paste", () => {
     const model = buildFootprintPreviewFromParsed(

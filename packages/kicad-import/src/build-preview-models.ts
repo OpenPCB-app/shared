@@ -643,6 +643,25 @@ function footprintPadFromParsed(
     });
   }
 
+  // A `circle` pad is a disc of `widthMm` — the one interpretation DRC, the
+  // copper record and the Gerber writer share. KiCad occasionally carries an
+  // unequal size on a circle; normalizing it here keeps the ellipse reading
+  // from ever reaching a consumer.
+  const isCircle = pad.shape === "circle";
+  if (isCircle && pad.size.height !== pad.size.width) {
+    warnings.push({
+      code: "footprint_pad_circle_size_normalized",
+      message: `Pad ${pad.number || index + 1} circle size ${pad.size.width} x ${pad.size.height} normalized to a disc of ${pad.size.width}`,
+    });
+  }
+
+  // A centred drill states nothing: `(offset 0 0)` is the KiCad default, so it
+  // must leave the pad's emitted shape exactly as it was.
+  const drillOffset =
+    pad.drillOffset && (pad.drillOffset.x !== 0 || pad.drillOffset.y !== 0)
+      ? pad.drillOffset
+      : undefined;
+
   const normalizedNumber = (pad.number ?? "").trim();
   return {
     id: `${normalizedNumber || "?"}:${index}`,
@@ -650,7 +669,7 @@ function footprintPadFromParsed(
     shape: isRenderedShape ? pad.shape : "rect",
     centerMm: { x: pad.position.x, y: pad.position.y },
     widthMm: pad.size.width,
-    heightMm: pad.size.height,
+    heightMm: isCircle ? pad.size.width : pad.size.height,
     rotationDeg: pad.rotation,
     roundrectRatio: pad.roundrectRatio,
     drillDiameterMm: pad.drillDiameter,
@@ -658,6 +677,12 @@ function footprintPadFromParsed(
       widthMm: pad.drillSlot.width,
       heightMm: pad.drillSlot.height,
     },
+    ...(drillOffset
+      ? { drillOffsetMm: { x: drillOffset.x, y: drillOffset.y } }
+      : {}),
+    // Absent means plated, so only a KiCad `np_thru_hole` states anything:
+    // every other pad keeps the exact shape it had before plating existed.
+    ...(pad.type === "np_thru_hole" ? { plated: false } : {}),
     role: isPasteOnlyPad(pad) ? "paste" : undefined,
     layer: pad.layers[0],
     layers: pad.layers,

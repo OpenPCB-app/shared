@@ -4,28 +4,28 @@
  * source of truth across OpenPCB, CoreLibrary admin, and Cloud.
  */
 import type {
+  FootprintPadDrillSlotMm,
   FootprintRenderModel,
   FootprintRenderSourcePad,
   SymbolRenderModel,
 } from "@openpcb/rendering-core";
 
-/** Slotted drill footprint, from KiCad `(drill oval W H)`. */
-export interface FootprintPreviewDrillSlotMm {
-  readonly widthMm: number;
-  readonly heightMm: number;
-}
+/**
+ * Slotted drill footprint, from KiCad `(drill oval W H)`.
+ *
+ * @deprecated The declaration moved to `FootprintPadDrillSlotMm` in
+ * `@openpcb/rendering-core`, next to the pad that carries it. Kept as an alias
+ * so existing importers of this name keep compiling.
+ */
+export type FootprintPreviewDrillSlotMm = FootprintPadDrillSlotMm;
 
 /**
- * Preview pad. Widens the render-core pad with the two facts KiCad carries
- * that a plain copper pad cannot express.
+ * Preview pad. Widens the render-core pad with the one fact KiCad carries that
+ * a plain copper pad cannot express. `drillSlotMm` and `plated` are inherited
+ * — they live on the render-core pad so DRC, export and rendering read one
+ * declaration.
  */
 export interface FootprintPreviewPad extends FootprintRenderSourcePad {
-  /**
-   * Present only for slotted (oval) drills. `drillDiameterMm` still carries
-   * the narrow axis, so round-drill consumers degrade safely instead of
-   * silently machining a too-small hole.
-   */
-  readonly drillSlotMm?: FootprintPreviewDrillSlotMm;
   /**
    * `"paste"` marks an unnumbered stencil-only sub-aperture — the paste
    * windows KiCad uses to segment a thermal/exposed pad. It has no copper and
