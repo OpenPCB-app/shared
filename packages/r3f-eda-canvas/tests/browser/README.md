@@ -24,3 +24,25 @@ The runner creates a new empty browser context for each case, blocks all externa
 The separate browser boundary fixture uses React's real DOM renderer and a deliberately isolated `useThree` context stub. Its five regressions cover a permanently suspended preload, a post-preload `onSync` stall, a thrown label, missing-glyph status, and timer cleanup after unmount. The healthy sibling must remain visible.
 
 This is package-level browser qualification. It does not establish packaged Electron, native GPU, production editor/preview coverage, or cross-platform release acceptance. The production application must still configure and consume a reviewed source-package release.
+
+## Footprint label depth regression
+
+The real `FootprintRenderLayer` fixture renders a two-pad millimetre model with a Greek reference behind opaque geometry and an unobstructed Greek value. It tests the omitted default and explicit `enableDepthTest={false}` overlay against `enableDepthTest={true}` occlusion. It checks actual Troika glyph bounds and material flags, `depthWrite=false`, framebuffer glyph pixels, and zero external requests. Capture waits for completed sync, removal of pending markers, and three identical demand-rendered frame samples before asserting results.
+
+With the fixture server running, execute from the temporary evidence directory:
+
+```sh
+playwright-cli -s=eda-depth-regression open about:blank
+playwright-cli -s=eda-depth-regression run-code --filename /path/to/shared/packages/r3f-eda-canvas/tests/browser/validate-depth.playwright.js
+playwright-cli -s=eda-depth-regression close
+```
+
+To compare source against a normally installed local tarball, start the server with `EDA_CANVAS_ARTIFACT_ROOT` pointing at its installed package directory and `EDA_CANVAS_PEER_MANIFEST` at the consumer's frontend `package.json`. The bundler resolves actual implementations against the same real consumer peer graph; it introduces no component mocks. Open `about:blank#artifact` instead of `about:blank` to run all six cases and require exact model, glyph geometry, material and pixel equality. The runner strips only resident blob URL identity for this comparison. The ordinary font and boundary fixtures retain their existing resolution.
+
+```sh
+EDA_CANVAS_ARTIFACT_ROOT=/path/to/isolated/app/node_modules/@openpcb/r3f-eda-canvas \
+EDA_CANVAS_PEER_MANIFEST=/path/to/isolated/app/src/core/frontend/package.json \
+bun tests/browser/serve.ts
+```
+
+This checks the package's depth toggle with an orthographic browser scene. It does not qualify the application's production 3D view, native shell, packaged font URLs or native GPU behavior.
