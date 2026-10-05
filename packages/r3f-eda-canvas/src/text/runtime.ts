@@ -100,7 +100,9 @@ export class EdaFontRuntime {
       if (released) return;
       released = true;
       this.users--;
-      if (!this.users) this.releaseResources();
+      // Troika workers may still be loading after React removes the last label.
+      // Keep the single verified font generation alive until explicit disposal.
+      if (!this.users && this.snapshot.state !== "ready") this.releaseResources();
     };
   }
 

@@ -69,14 +69,20 @@ describe("verified resident EDA font", () => {
     expect(state.created).toEqual([]);
   });
 
-  test("one fetch shared by labels; blob retained until last release", async () => {
+  test("one verified URL survives label churn until explicit disposal", async () => {
     const state = await setup();
     const release1 = state.runtime.acquire(), release2 = state.runtime.acquire();
     await settled(state.runtime);
     expect(state.runtime.getSnapshot()).toEqual({ state: "ready", fontUrl: "blob:resident-1" });
     expect(state.requests).toEqual(["http://localhost:1420/font.ttf"]);
     release1(); expect(state.revoked).toEqual([]);
-    release2(); expect(state.revoked).toEqual(["blob:resident-1"]);
+    release2(); expect(state.revoked).toEqual([]);
+    const release3 = state.runtime.acquire();
+    expect(state.requests).toHaveLength(1);
+    expect(state.runtime.getSnapshot()).toEqual({ state: "ready", fontUrl: "blob:resident-1" });
+    release3();
+    state.runtime.dispose();
+    expect(state.revoked).toEqual(["blob:resident-1"]);
   });
 
   test("404 fails visibly before any blob/Troika", async () => {
