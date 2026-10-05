@@ -18,3 +18,5 @@ export * from "./theme/index.js";
 export * from "./selection/index.js";
 export { snapPointToGrid } from "./tools/index.js";
 export type { EditorTool, ToolFactory } from "./tools/types.js";
+
+export * from "./text/index.js";

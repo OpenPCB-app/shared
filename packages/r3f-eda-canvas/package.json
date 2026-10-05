@@ -23,10 +23,11 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "echo 'visual + interaction tests run in consumer (R3F requires DOM)'",
+    "test": "bun test src/text",
     "prepack": "npm run build",
     "prepare": "npm run build",
-    "dev": "tsc -p tsconfig.build.json --watch"
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "test:browser:serve": "bun tests/browser/serve.ts"
   },
   "repository": {
     "type": "git",
