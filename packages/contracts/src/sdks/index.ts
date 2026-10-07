@@ -13,6 +13,5 @@ export type ModuleSdkToken =
 export * from "./library/index.js";
 export * from "./designer/index.js";
 export * from "./tasks/index.js";
-export * from "./assistant/index.js";
 export * from "./copilot/index.js";
 export * from "./billing/index.js";
