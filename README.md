@@ -13,7 +13,7 @@ Shared libraries for the [OpenPCB](https://github.com/OpenPCB-app) ecosystem. In
 | [`@openpcb/r3f-eda-canvas`](packages/r3f-eda-canvas)   | React Three Fiber canvas engine, primitives, scene renderers              | `r3f-eda-canvas-v0.1.3`  | react, three, r3f, drei                    |
 | [`@openpcb/opclib-pack`](packages/opclib-pack)         | `.opclib` archive pack/unpack: canonical JSON digest, ZIP, schemas        | `opclib-pack-v0.1.0`     | ajv, ajv-formats, fflate                   |
 | [`@openpcb/command-pattern`](packages/command-pattern) | Generic ECS world + command-sourcing (envelope, history, patch, invert)   | `command-pattern-v0.1.0` | none                                       |
-| [`@openpcb/contracts`](packages/contracts)             | Wire-format contracts: SDKs, library import API, AppError hierarchy       | `contracts-v0.2.0`       | command-pattern + rendering-core + ai-core |
+| [`@openpcb/contracts`](packages/contracts)             | Wire-format contracts: SDKs, library import API, AppError hierarchy       | `contracts-v0.2.0`       | command-pattern + rendering-core           |
 | [`@openpcb/ai-core`](packages/ai-core)                 | Headless AI runtime: provider client, tool registry, run-loop, prompts    | `ai-core-v0.1.0`         | none                                       |
 
 ## Install (consumer)
@@ -125,3 +125,17 @@ git push origin <pkg>-vX.Y.Z
 ## License
 
 MIT.
+
+## Scoped domain candidate packaging
+
+Use `node scripts/pack-domain-candidates.mjs --out /tmp/openpcb-domain-candidates`
+to build and pack only contracts and opclib-pack through their normal npm lifecycle,
+from clean temporary stages. See the contracts README for artifact evidence and the
+pending breaking-release boundary. This workflow does not release or repin packages.
+
+The opclib-pack source used for this verification matches every file in the
+remote `opclib-pack-v0.3.0` subtree release at
+`347131dff4250a4c3f07d9d9932740070450f690`. Verify the remote tag with
+`git ls-remote https://github.com/OpenPCB-app/shared.git refs/tags/opclib-pack-v0.3.0`
+before reusing that provenance. The local pre-subtree tag points at a different
+commit and is not the publication authority.
