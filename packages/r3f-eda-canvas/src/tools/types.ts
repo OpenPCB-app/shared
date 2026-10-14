@@ -16,7 +16,12 @@ export interface EditorTool<TId extends string = string> {
   onPointerMove?(event: InteractionEvent): void;
   onPointerUp?(event: InteractionEvent): void;
   onContextMenu?(event: InteractionEvent): void;
-  onKeyDown?(event: KeyboardEvent): void;
+  /**
+   * Return `true` when the key was consumed (e.g. Escape cancelled an
+   * in-progress gesture); the dispatcher then marks it handled so outer
+   * Escape layers do not also act on it.
+   */
+  onKeyDown?(event: KeyboardEvent): boolean | void;
   /** Optional rubber-band preview rendered in canvas during interaction. */
   render?(): ReactNode;
 }

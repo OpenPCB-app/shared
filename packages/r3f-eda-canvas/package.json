@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "bun test src/text",
+    "test": "bun test src/text src/utils src/tools",
     "prepack": "npm run build",
     "prepare": "npm run build",
     "dev": "tsc -p tsconfig.build.json --watch",
