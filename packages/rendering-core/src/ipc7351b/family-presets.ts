@@ -10,6 +10,7 @@ import type {
   GullWingDualParams,
   QfnParams,
   QuadFlatParams,
+  SotParams,
 } from "./pad-calculator.js";
 
 // ── Package family identifiers ──────────────────────────────────────
@@ -93,66 +94,96 @@ export const CHIP_FAMILY: PackageFamilyDef<ChipParams> = {
 };
 
 // ── SOT (Small Outline Transistor) ──────────────────────────────────
+//
+// Nominal = midpoint of the min/max in the cited drawing (or the drawing's
+// nominal where it gives one). Sources and the KiCad comparison tolerances
+// are recorded in packages/rendering-core/SOURCES.md.
 
-export const SOT_FAMILY: PackageFamilyDef<GullWingDualParams> = {
+export const SOT_FAMILY: PackageFamilyDef<SotParams> = {
   id: "sot",
   label: "SOT",
   subtitle: "Small Outline Transistor",
   sizes: [
     {
+      // JEDEC TO-236AB — NXP SOT23 package outline (sot023_po, 2014-09-22).
       label: "SOT-23",
       metric: null,
       subtitle: "3 pins, 0.95 mm pitch",
       params: {
-        pinCount: 4, // SOT-23 has 3 pins but uses 4-pin dual-row layout (1 empty)
         pitchMm: 0.95,
-        spanMm: 2.4,
-        terminalLengthMm: 0.5,
-        terminalWidthMm: 0.4,
+        leadSpanMm: 2.3,
+        terminalLengthMm: 0.3,
+        terminalWidthMm: 0.43,
         bodyWidthMm: 1.3,
-        bodyLengthMm: 1.75,
+        bodyLengthMm: 2.9,
+        leftPins: ["1", null, "2"],
+        rightPins: [null, "3", null],
       },
     },
     {
+      // JEDEC MO-178AA — Renesas P5.064 (KA0005AB) Rev04, 2025-07-22.
       label: "SOT-23-5",
       metric: null,
       subtitle: "5 pins, 0.95 mm pitch",
       params: {
-        pinCount: 6,
         pitchMm: 0.95,
-        spanMm: 2.6,
-        terminalLengthMm: 0.5,
-        terminalWidthMm: 0.3,
+        leadSpanMm: 2.8,
+        terminalLengthMm: 0.45,
+        terminalWidthMm: 0.4,
         bodyWidthMm: 1.6,
         bodyLengthMm: 2.9,
+        leftPins: ["1", "2", "3"],
+        rightPins: ["5", null, "4"],
       },
     },
     {
+      // JEDEC MO-178AB — Renesas P6.064 (KA0006AB) Rev06.
+      label: "SOT-23-6",
+      metric: null,
+      subtitle: "6 pins, 0.95 mm pitch",
+      params: {
+        pitchMm: 0.95,
+        leadSpanMm: 2.8,
+        terminalLengthMm: 0.45,
+        terminalWidthMm: 0.4,
+        bodyWidthMm: 1.6,
+        bodyLengthMm: 2.9,
+        leftPins: ["1", "2", "3"],
+        rightPins: ["6", "5", "4"],
+      },
+    },
+    {
+      // JEDEC TO-261AA — NXP SOT223 (SC-73) outline; Vishay DWG 5969
+      // (TO-261AA) agrees within 0.05 mm on every shared dimension.
       label: "SOT-223",
       metric: null,
-      subtitle: "4 pins, 2.3 mm pitch",
+      subtitle: "3 pins + tab, 2.3 mm pitch",
       params: {
-        pinCount: 4,
         pitchMm: 2.3,
-        spanMm: 6.5,
+        leadSpanMm: 7.0,
         terminalLengthMm: 0.9,
         terminalWidthMm: 0.7,
         bodyWidthMm: 3.5,
         bodyLengthMm: 6.5,
+        leftPins: ["1", "2", "3"],
+        rightPins: [],
+        tab: { number: "4", widthMm: 3.0 },
       },
     },
     {
+      // JEITA SC-70 — NXP SOT323 package outline.
       label: "SOT-323",
       metric: null,
       subtitle: "3 pins, 0.65 mm pitch",
       params: {
-        pinCount: 4,
         pitchMm: 0.65,
-        spanMm: 2.1,
-        terminalLengthMm: 0.4,
-        terminalWidthMm: 0.3,
+        leadSpanMm: 2.1,
+        terminalLengthMm: 0.3,
+        terminalWidthMm: 0.35,
         bodyWidthMm: 1.25,
-        bodyLengthMm: 1.35,
+        bodyLengthMm: 2.0,
+        leftPins: ["1", null, "2"],
+        rightPins: [null, "3", null],
       },
     },
   ],
@@ -256,19 +287,23 @@ export const QFP_FAMILY: PackageFamilyDef<QuadFlatParams> = {
 };
 
 // ── QFN (Quad Flat No-lead) ─────────────────────────────────────────
+//
+// MO-220 nominal terminal and exposed-pad dimensions from Analog Devices
+// LFCSP outlines that state MO-220 compliance; see SOURCES.md.
 
 function qfnParams(
   pinCount: number,
   bodySizeMm: number,
   pitchMm: number,
-  exposedPadMm?: number,
+  terminal: { readonly widthMm: number; readonly lengthMm: number },
+  exposedPadMm: number,
 ): QfnParams {
   return {
     pinCount,
     pitchMm,
     bodySizeMm,
-    padWidthMm: pitchMm * 0.5,
-    padHeightMm: 0.6,
+    terminalWidthMm: terminal.widthMm,
+    terminalLengthMm: terminal.lengthMm,
     exposedPadMm,
   };
 }
@@ -279,28 +314,32 @@ export const QFN_FAMILY: PackageFamilyDef<QfnParams> = {
   subtitle: "Quad Flat No-lead",
   sizes: [
     {
+      // MO-220-VEED-4 — ADI CP-16-50.
       label: "QFN-16",
       metric: null,
       subtitle: "16 pins, 3x3 mm, 0.5 pitch",
-      params: qfnParams(16, 3.0, 0.5, 1.7),
+      params: qfnParams(16, 3.0, 0.5, { widthMm: 0.25, lengthMm: 0.4 }, 1.6),
     },
     {
+      // MO-220-VGGD-1 — ADI CP-20-1.
       label: "QFN-20",
       metric: null,
       subtitle: "20 pins, 4x4 mm, 0.5 pitch",
-      params: qfnParams(20, 4.0, 0.5, 2.5),
+      params: qfnParams(20, 4.0, 0.5, { widthMm: 0.23, lengthMm: 0.6 }, 2.1),
     },
     {
+      // MO-220-VGGD-2 — ADI CP-24-1.
       label: "QFN-24",
       metric: null,
       subtitle: "24 pins, 4x4 mm, 0.5 pitch",
-      params: qfnParams(24, 4.0, 0.5, 2.5),
+      params: qfnParams(24, 4.0, 0.5, { widthMm: 0.23, lengthMm: 0.4 }, 2.1),
     },
     {
+      // MO-220-VHHD-2 — ADI CP-32-2.
       label: "QFN-32",
       metric: null,
       subtitle: "32 pins, 5x5 mm, 0.5 pitch",
-      params: qfnParams(32, 5.0, 0.5, 3.5),
+      params: qfnParams(32, 5.0, 0.5, { widthMm: 0.23, lengthMm: 0.4 }, 3.1),
     },
   ],
 };

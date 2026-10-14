@@ -20,6 +20,7 @@ import {
   calculateGullWingDualPads,
   calculateQfnPads,
   calculateQuadFlatPads,
+  calculateSotPads,
   type PadCalculatorResult,
 } from "./pad-calculator.js";
 import {
@@ -112,10 +113,7 @@ function resolvePreset(
     case "sot": {
       const size = SOT_FAMILY.sizes.find((s) => s.label === sizeLabel);
       if (!size) throw new Error(`Unknown SOT size: ${sizeLabel}`);
-      const calcResult = calculateGullWingDualPads(
-        size.params,
-        SOT_ADDITIONS[density],
-      );
+      const calcResult = calculateSotPads(size.params, SOT_ADDITIONS[density]);
       return {
         calcResult,
         name: size.label,
