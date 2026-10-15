@@ -36,6 +36,10 @@ export interface PackageFamilyDef<TParams> {
 }
 
 // ── Chip (2-terminal passive) ───────────────────────────────────────
+//
+// Resistor terminal dimensions (nominal = midpoint of the drawing's min/max)
+// for every chip size: MLCC terminal bands differ, and the footprint names
+// keep the historical `C_` prefix. Sources: SOURCES.md.
 
 export const CHIP_FAMILY: PackageFamilyDef<ChipParams> = {
   id: "chip",
@@ -43,48 +47,60 @@ export const CHIP_FAMILY: PackageFamilyDef<ChipParams> = {
   subtitle: "R, C, L (0201–2512)",
   sizes: [
     {
+      // Vishay CRCW0201 e3 — doc 20052, rev 21-Sep-2022.
       label: "0201",
       metric: "0603",
       subtitle: "0.6 x 0.3 mm",
       params: { bodyLengthMm: 0.6, bodyWidthMm: 0.3, terminalLengthMm: 0.15 },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 1005 [0402].
       label: "0402",
       metric: "1005",
       subtitle: "1.0 x 0.5 mm",
-      params: { bodyLengthMm: 1.0, bodyWidthMm: 0.5, terminalLengthMm: 0.2 },
+      params: { bodyLengthMm: 1.05, bodyWidthMm: 0.54, terminalLengthMm: 0.2 },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 1608 [0603].
       label: "0603",
       metric: "1608",
       subtitle: "1.6 x 0.8 mm",
-      params: { bodyLengthMm: 1.6, bodyWidthMm: 0.8, terminalLengthMm: 0.3 },
+      params: {
+        bodyLengthMm: 1.6,
+        bodyWidthMm: 0.825,
+        terminalLengthMm: 0.275,
+      },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 2012 [0805].
       label: "0805",
       metric: "2012",
       subtitle: "2.0 x 1.25 mm",
       params: { bodyLengthMm: 2.0, bodyWidthMm: 1.25, terminalLengthMm: 0.4 },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 3216 [1206].
       label: "1206",
       metric: "3216",
       subtitle: "3.2 x 1.6 mm",
       params: { bodyLengthMm: 3.2, bodyWidthMm: 1.6, terminalLengthMm: 0.5 },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 3225 [1210].
       label: "1210",
       metric: "3225",
       subtitle: "3.2 x 2.5 mm",
-      params: { bodyLengthMm: 3.2, bodyWidthMm: 2.5, terminalLengthMm: 0.5 },
+      params: { bodyLengthMm: 3.2, bodyWidthMm: 2.49, terminalLengthMm: 0.5 },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 5025 [2010].
       label: "2010",
       metric: "5025",
       subtitle: "5.0 x 2.5 mm",
       params: { bodyLengthMm: 5.0, bodyWidthMm: 2.5, terminalLengthMm: 0.6 },
     },
     {
+      // IPC-SM-782 §8.1 Rev A — Figure 2, 6332 [2512].
       label: "2512",
       metric: "6332",
       subtitle: "6.3 x 3.2 mm",

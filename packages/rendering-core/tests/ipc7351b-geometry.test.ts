@@ -1,13 +1,17 @@
 /**
  * Table-driven geometry qualification of every IPC-7351B preset at every
  * density: pad count, numbering, pitch, span, exposed pad, pairwise copper
- * gap — plus SOT / QFN against their cited drawings and the KiCad library.
+ * gap — plus chip / SOT / QFN against their cited drawings and the KiCad
+ * library.
  */
 import { describe, expect, test } from "bun:test";
 import {
+  ALL_FAMILIES,
   generateFootprint,
   type DensityLevel,
   type FootprintRenderSourcePad,
+  type PackageFamily,
+  type PreviewGraphic,
 } from "../src/index.js";
 import {
   CHIP_FAMILY,
@@ -16,9 +20,9 @@ import {
   SOIC_FAMILY,
   SOT_FAMILY,
 } from "../src/ipc7351b/family-presets.js";
-import { QFN_ADDITIONS, SOT_ADDITIONS } from "../src/ipc7351b/ipc-dimensions.js";
+import { CHIP_ADDITIONS, QFN_ADDITIONS, SOT_ADDITIONS } from "../src/ipc7351b/ipc-dimensions.js";
 import { QFN_EP_MIN_GAP_MM, calculateQfnPads } from "../src/ipc7351b/pad-calculator.js";
-import { QFN_DRAWINGS, SOT_DRAWINGS, nominal } from "./fixtures/ipc7351b-drawings.js";
+import { CHIP_DRAWINGS, QFN_DRAWINGS, SOT_DRAWINGS, nominal } from "./fixtures/ipc7351b-drawings.js";
 import { KICAD_ORACLE, KICAD_ORACLE_TOLERANCE } from "./fixtures/ipc7351b-kicad-oracle.js";
 import {
   MIN_PAD_GAP_MM,
@@ -41,6 +45,21 @@ function numbers(list: readonly FootprintRenderSourcePad[]): string[] {
 
 function sequence(count: number): string[] {
   return Array.from({ length: count }, (_, index) => String(index + 1));
+}
+
+function familyOf(label: string): PackageFamily {
+  for (const family of ALL_FAMILIES) {
+    for (const size of family.sizes) if (size.label === label) return family.id;
+  }
+  throw new Error(`no preset labelled ${label}`);
+}
+
+function rectOn(graphics: readonly PreviewGraphic[], layer: string) {
+  const found = graphics.filter((graphic) => graphic.layer === layer);
+  expect(found).toHaveLength(1);
+  const rect = found[0]!;
+  if (rect.kind !== "rect") throw new Error(`${layer}: expected a rect, got ${rect.kind}`);
+  return rect;
 }
 
 function expectCommon(list: readonly FootprintRenderSourcePad[], signalCount: number) {
@@ -122,6 +141,54 @@ describe("dual / quad row presets: pitch and symmetric span", () => {
       }
     }
   });
+});
+
+describe("chip presets against their cited resistor drawings (IPC-7351B nominal land)", () => {
+  test("every chip preset has a drawing and a KiCad oracle row", () => {
+    const labels = CHIP_FAMILY.sizes.map((size) => size.label).sort();
+    expect(Object.keys(CHIP_DRAWINGS).sort()).toEqual(labels);
+    for (const label of labels) expect(KICAD_ORACLE[label]).toBeDefined();
+  });
+  for (const [label, drawing] of Object.entries(CHIP_DRAWINGS)) {
+    for (const density of DENSITIES) {
+      test(`${label} ${density} — ${drawing.source}`, () => {
+        const add = CHIP_ADDITIONS[density];
+        const body = nominal(drawing.bodyLength);
+        const width = nominal(drawing.bodyWidth);
+        const terminal = nominal(drawing.terminalLength);
+        const expectedX = (body - terminal) / 2 + (add.toe - add.heel) / 2;
+        const expectedLength = terminal + add.toe + add.heel;
+        const expectedWidth = width + 2 * add.side;
+        const source = generateFootprint("chip", label, density).source;
+
+        expect(numbers(source.pads)).toEqual(["1", "2"]);
+        source.pads.forEach((pad, index) => {
+          expect(pad.centerMm.x).toBeCloseTo(index === 0 ? -expectedX : expectedX, 4);
+          expect(pad.centerMm.y).toBe(0);
+          expect(pad.rotationDeg).toBe(0);
+          expect(pad.widthMm).toBeCloseTo(expectedLength, 4);
+          expect(pad.heightMm).toBeCloseTo(expectedWidth, 4);
+          // The land covers the whole nominal terminal (inner end to body end).
+          const outer = Math.abs(pad.centerMm.x) + pad.widthMm / 2;
+          const inner = Math.abs(pad.centerMm.x) - pad.widthMm / 2;
+          expect(outer).toBeGreaterThanOrEqual(body / 2 - TOL);
+          expect(inner).toBeLessThanOrEqual(body / 2 - terminal + TOL);
+        });
+
+        // Silk is the body outline L (x) × W (y); courtyard = outer pad edges + 2c.
+        const silk = rectOn(source.graphics, "F.SilkS");
+        expect(silk.width).toBeCloseTo(body, 4);
+        expect(silk.height).toBeCloseTo(width, 4);
+        expect(silk.x + silk.width / 2).toBeCloseTo(0, 4);
+        expect(silk.y + silk.height / 2).toBeCloseTo(0, 4);
+        const courtyard = rectOn(source.graphics, "F.CrtYd");
+        expect(courtyard.width).toBeCloseTo(2 * expectedX + expectedLength + 2 * add.courtyard, 4);
+        expect(courtyard.height).toBeCloseTo(Math.max(width, expectedWidth) + 2 * add.courtyard, 4);
+        expect(courtyard.x + courtyard.width / 2).toBeCloseTo(0, 4);
+        expect(courtyard.y + courtyard.height / 2).toBeCloseTo(0, 4);
+      });
+    }
+  }
 });
 
 describe("SOT presets against their cited drawings (IPC-7351B nominal land)", () => {
@@ -231,12 +298,11 @@ describe("QFN presets against MO-220 drawings: lands and exposed pad", () => {
   });
 });
 
-describe("SOT / QFN against KiCad standard-library footprints (nominal density)", () => {
+describe("chip / SOT / QFN against KiCad standard-library footprints (nominal density)", () => {
   for (const [label, oracle] of Object.entries(KICAD_ORACLE)) {
     const tolerance = KICAD_ORACLE_TOLERANCE[label]!;
     test(`${label} ≈ ${oracle.file} (centre ±${tolerance.centerMm}, size ±${tolerance.sizeMm}/${tolerance.largePadMm} mm)`, () => {
-      const family = label.startsWith("QFN") ? "qfn" : "sot";
-      const list = pads(family, label, "nominal");
+      const list = pads(familyOf(label), label, "nominal");
       expect(numbers(list).sort()).toEqual(oracle.pads.map(([number]) => number).sort());
       for (const [number, x, y, sizeX, sizeY] of oracle.pads) {
         const pad = list.find((candidate) => candidate.number === number)!;

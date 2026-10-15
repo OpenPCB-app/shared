@@ -14,7 +14,6 @@ import type {
 import {
   COURTYARD_LINE_WIDTH,
   SILK_LINE_WIDTH,
-  SILK_PAD_CLEARANCE,
   type DensityLevel,
   type SolderFilletAdditions,
 } from "./ipc-dimensions.js";
@@ -106,69 +105,64 @@ export interface PadCalculatorResult {
 // ── Chip (2-terminal passive) ───────────────────────────────────────
 
 export interface ChipParams {
-  /** Body length (terminal-to-terminal direction, mm) */
+  /** Body length L, terminal end to terminal end along X (nominal mm) */
   bodyLengthMm: number;
-  /** Body width (perpendicular direction, mm) */
+  /** Body width W, along Y (nominal mm) */
   bodyWidthMm: number;
-  /** Terminal length on each side (mm) */
+  /** Terminal length T, measured inward from each body end (nominal mm) */
   terminalLengthMm: number;
 }
 
+/**
+ * IPC-7351B nominal land: the pad runs from the terminal's inner end minus
+ * the heel addition to the body end plus the toe addition, so its centre
+ * sits at (L − T)/2 + (toe − heel)/2 and its length is T + toe + heel.
+ */
 export function calculateChipPads(
   params: ChipParams,
   additions: SolderFilletAdditions,
 ): PadCalculatorResult {
   const { bodyLengthMm, bodyWidthMm, terminalLengthMm } = params;
 
-  // IPC-7351B pad size formula for chip components:
-  // Pad width  = terminal width + 2 * side addition
-  // Pad height = terminal length + toe + heel additions
-  // Pad span   = body length + toe addition (total center-to-center)
-  const padWidth = roundTo(bodyWidthMm + 2 * additions.side, 4);
-  const padHeight = roundTo(
+  const padLength = roundTo(
     terminalLengthMm + additions.toe + additions.heel,
     4,
   );
-  const padSpan = roundTo(
-    bodyLengthMm - terminalLengthMm + padHeight + additions.toe,
+  const padWidth = roundTo(bodyWidthMm + 2 * additions.side, 4);
+  const padCenterX = roundTo(
+    (bodyLengthMm - terminalLengthMm) / 2 +
+      (additions.toe - additions.heel) / 2,
     4,
   );
-  const padCenterX = padSpan / 2;
 
-  const pads: FootprintRenderSourcePad[] = [
-    {
-      id: padId(0),
-      number: "1",
+  const pads: FootprintRenderSourcePad[] = [-padCenterX, padCenterX].map(
+    (x, index) => ({
+      id: padId(index),
+      number: String(index + 1),
       shape: "rect",
-      centerMm: { x: roundTo(-padCenterX, 4), y: 0 },
-      widthMm: padWidth,
-      heightMm: padHeight,
-      rotationDeg: 90,
+      centerMm: { x, y: 0 },
+      widthMm: padLength,
+      heightMm: padWidth,
+      rotationDeg: 0,
       layer: "F.Cu",
-    },
-    {
-      id: padId(1),
-      number: "2",
-      shape: "rect",
-      centerMm: { x: roundTo(padCenterX, 4), y: 0 },
-      widthMm: padWidth,
-      heightMm: padHeight,
-      rotationDeg: 90,
-      layer: "F.Cu",
-    },
-  ];
+    }),
+  );
 
-  const silkW = bodyWidthMm + SILK_PAD_CLEARANCE * 2;
-  const silkH = bodyLengthMm;
-  const courtW = padSpan + padHeight + 2 * additions.courtyard;
-  const courtH = Math.max(bodyWidthMm, padWidth) + 2 * additions.courtyard;
+  const courtW = roundTo(
+    2 * padCenterX + padLength + 2 * additions.courtyard,
+    4,
+  );
+  const courtH = roundTo(
+    Math.max(bodyWidthMm, padWidth) + 2 * additions.courtyard,
+    4,
+  );
 
   const graphics: PreviewGraphic[] = [
-    silkRect(0, 0, silkW, silkH, pads),
-    courtyardRect(0, 0, roundTo(courtW, 4), roundTo(courtH, 4)),
+    silkRect(0, 0, bodyLengthMm, bodyWidthMm, pads),
+    courtyardRect(0, 0, courtW, courtH),
   ];
 
-  const halfH = Math.max(courtH, silkH) / 2;
+  const halfH = Math.max(courtH, bodyWidthMm) / 2;
   const labels = [refLabel(0, halfH), valueLabel(0, halfH)];
 
   return { pads, graphics, labels };

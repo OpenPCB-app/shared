@@ -25,6 +25,15 @@ export interface OracleTolerance {
 }
 
 export const KICAD_ORACLE_TOLERANCE: Readonly<Record<string, OracleTolerance>> = {
+  // Chip lands are all signal pads: the large-pad bound equals the signal one.
+  "0201": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "0402": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "0603": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "0805": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "1206": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "1210": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "2010": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
+  "2512": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
   "SOT-23": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
   "SOT-23-5": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
   "SOT-23-6": { centerMm: 0.1, sizeMm: 0.5, largePadMm: 0.5 },
@@ -40,6 +49,64 @@ export const KICAD_ORACLE_TOLERANCE: Readonly<Record<string, OracleTolerance>> =
 };
 
 export const KICAD_ORACLE: Readonly<Record<string, OracleFootprint>> = {
+  // Chip family (D7): KiCad Resistor_SMD.pretty, the resistor drawings the
+  // presets cite. R_0201's two paste-only pads (number "") are not copper.
+  "0201": {
+    file: "R_0201_0603Metric.kicad_mod",
+    pads: [
+      ["1", -0.32, 0, 0.46, 0.4],
+      ["2", 0.32, 0, 0.46, 0.4],
+    ],
+  },
+  "0402": {
+    file: "R_0402_1005Metric.kicad_mod",
+    pads: [
+      ["1", -0.51, 0, 0.54, 0.64],
+      ["2", 0.51, 0, 0.54, 0.64],
+    ],
+  },
+  "0603": {
+    file: "R_0603_1608Metric.kicad_mod",
+    pads: [
+      ["1", -0.825, 0, 0.8, 0.95],
+      ["2", 0.825, 0, 0.8, 0.95],
+    ],
+  },
+  "0805": {
+    file: "R_0805_2012Metric.kicad_mod",
+    pads: [
+      ["1", -0.9125, 0, 1.025, 1.4],
+      ["2", 0.9125, 0, 1.025, 1.4],
+    ],
+  },
+  "1206": {
+    file: "R_1206_3216Metric.kicad_mod",
+    pads: [
+      ["1", -1.4625, 0, 1.125, 1.75],
+      ["2", 1.4625, 0, 1.125, 1.75],
+    ],
+  },
+  "1210": {
+    file: "R_1210_3225Metric.kicad_mod",
+    pads: [
+      ["1", -1.4625, 0, 1.125, 2.65],
+      ["2", 1.4625, 0, 1.125, 2.65],
+    ],
+  },
+  "2010": {
+    file: "R_2010_5025Metric.kicad_mod",
+    pads: [
+      ["1", -2.3125, 0, 1.225, 2.65],
+      ["2", 2.3125, 0, 1.225, 2.65],
+    ],
+  },
+  "2512": {
+    file: "R_2512_6332Metric.kicad_mod",
+    pads: [
+      ["1", -2.9625, 0, 1.225, 3.35],
+      ["2", 2.9625, 0, 1.225, 3.35],
+    ],
+  },
   "SOT-23": {
     file: "SOT-23.kicad_mod",
     pads: [
