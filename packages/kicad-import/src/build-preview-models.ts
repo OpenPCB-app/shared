@@ -19,6 +19,11 @@ import type {
   ParsedKicadSymbol,
   ParsedPad,
 } from "@openpcb/kicad-parsers";
+import {
+  KICAD_FOOTPRINT_FRAME_STAMP,
+  kicadPadToCanonical,
+  kicadPointToCanonical,
+} from "./frame.js";
 import type { FootprintPreviewModel, FootprintPreviewPad } from "./types.js";
 
 type SNode = Array<string | number | SNode>;
@@ -268,6 +273,16 @@ function pointFromUnknown(value: unknown): PointMm | null {
   return { x, y };
 }
 
+/**
+ * A footprint-local point, read from a parsed KiCad node (frame K, Y-down) and
+ * mapped to the canonical Y-up frame. Every footprint graphic and label point
+ * goes through here — the one K→C boundary (KF1); the symbol path never does.
+ */
+function fp(value: unknown): PointMm | null {
+  const point = pointFromUnknown(value);
+  return point ? kicadPointToCanonical(point) : null;
+}
+
 function footprintGraphicFromParsed(
   graphic: ParsedKicadFootprint["graphics"][number],
   warnings: PreviewWarning[],
@@ -275,8 +290,8 @@ function footprintGraphicFromParsed(
   const layer = graphic.layer;
 
   if (graphic.type === "line") {
-    const start = pointFromUnknown(graphic.data.start);
-    const end = pointFromUnknown(graphic.data.end);
+    const start = fp(graphic.data.start);
+    const end = fp(graphic.data.end);
     if (!start || !end) {
       return { graphic: null, label: null };
     }
@@ -293,8 +308,10 @@ function footprintGraphicFromParsed(
   }
 
   if (graphic.type === "rect") {
-    const start = pointFromUnknown(graphic.data.start);
-    const end = pointFromUnknown(graphic.data.end);
+    // Corners are converted BEFORE the min/abs below, so the rect's origin is
+    // its canonical bottom-left corner, not the image of KiCad's top-left one.
+    const start = fp(graphic.data.start);
+    const end = fp(graphic.data.end);
     if (!start || !end) {
       return { graphic: null, label: null };
     }
@@ -314,8 +331,8 @@ function footprintGraphicFromParsed(
   }
 
   if (graphic.type === "circle") {
-    const center = pointFromUnknown(graphic.data.center);
-    const end = pointFromUnknown(graphic.data.end);
+    const center = fp(graphic.data.center);
+    const end = fp(graphic.data.end);
     if (!center || !end) {
       return { graphic: null, label: null };
     }
@@ -333,9 +350,11 @@ function footprintGraphicFromParsed(
   }
 
   if (graphic.type === "arc") {
-    const start = pointFromUnknown(graphic.data.start);
-    const mid = pointFromUnknown(graphic.data.mid);
-    const end = pointFromUnknown(graphic.data.end);
+    // Mapped pointwise: the reflection reverses the arc's signed turn, which
+    // is exactly what a mirrored arc must do.
+    const start = fp(graphic.data.start);
+    const mid = fp(graphic.data.mid);
+    const end = fp(graphic.data.end);
     if (!start || !mid || !end) {
       warnings.push({
         code: "footprint_arc_format_unsupported",
@@ -371,7 +390,7 @@ function footprintGraphicFromParsed(
       if (x === null || y === null) {
         continue;
       }
-      points.push({ x, y });
+      points.push(kicadPointToCanonical({ x, y }));
     }
     if (points.length < 2) {
       return { graphic: null, label: null };
@@ -405,12 +424,15 @@ function footprintGraphicFromParsed(
           : parsed.kind === "value"
             ? "value"
             : "footprint-text";
+      // The id embeds the CONVERTED anchor; the rotation is a KiCad angle,
+      // which is already math-CCW in the Y-up frame (unchanged by KF1).
+      const at = kicadPointToCanonical(parsed.position);
       return {
         graphic: null,
         label: {
-          id: `fp-text:${layer}:${parsed.position.x}:${parsed.position.y}:${parsed.content}`,
+          id: `fp-text:${layer}:${at.x}:${at.y}:${parsed.content}`,
           text: normalizeFootprintText(parsed.content),
-          at: parsed.position,
+          at,
           fontSizeMm: parsed.fontSizeMm ?? 1.0,
           rotationDeg: parsed.rotation,
           anchorX: parsed.justifyH,
@@ -429,16 +451,18 @@ function footprintGraphicFromParsed(
     const args = Array.isArray(graphic.data.__args) ? graphic.data.__args : [];
     const contentRaw = args[1] ?? args[0];
     const content = typeof contentRaw === "string" ? contentRaw : "";
-    const at = Array.isArray(graphic.data.at) ? graphic.data.at : [];
-    const x = toNumber(at[0]) ?? 0;
-    const y = toNumber(at[1]) ?? 0;
-    const rotationDeg = toNumber(at[2]) ?? 0;
+    const atNode = Array.isArray(graphic.data.at) ? graphic.data.at : [];
+    const at = kicadPointToCanonical({
+      x: toNumber(atNode[0]) ?? 0,
+      y: toNumber(atNode[1]) ?? 0,
+    });
+    const rotationDeg = toNumber(atNode[2]) ?? 0;
     return {
       graphic: null,
       label: {
-        id: `fp-text:${layer}:${x}:${y}:${content}`,
+        id: `fp-text:${layer}:${at.x}:${at.y}:${content}`,
         text: normalizeFootprintText(content),
-        at: { x, y },
+        at,
         fontSizeMm: 1.0,
         rotationDeg,
         anchorX: "center",
@@ -661,13 +685,22 @@ function footprintPadFromParsed(
     pad.drillOffset && (pad.drillOffset.x !== 0 || pad.drillOffset.y !== 0)
       ? pad.drillOffset
       : undefined;
+  // KiCad's hole sits at `at` and its copper at `at + RotK(offset, α)`; the
+  // canonical pad is the reverse (copper at centerMm, hole offset from it).
+  // KF1 §3.1.2 — `kicadPadToCanonical` carries the derivation. The angle is
+  // unchanged by the frame conversion.
+  const { centerMm, drillOffsetMm } = kicadPadToCanonical({
+    position: pad.position,
+    rotation: pad.rotation,
+    ...(drillOffset ? { drillOffset } : {}),
+  });
 
   const normalizedNumber = (pad.number ?? "").trim();
   return {
     id: `${normalizedNumber || "?"}:${index}`,
     number: normalizedNumber,
     shape: isRenderedShape ? pad.shape : "rect",
-    centerMm: { x: pad.position.x, y: pad.position.y },
+    centerMm,
     widthMm: pad.size.width,
     heightMm: isCircle ? pad.size.width : pad.size.height,
     rotationDeg: pad.rotation,
@@ -677,9 +710,7 @@ function footprintPadFromParsed(
       widthMm: pad.drillSlot.width,
       heightMm: pad.drillSlot.height,
     },
-    ...(drillOffset
-      ? { drillOffsetMm: { x: drillOffset.x, y: drillOffset.y } }
-      : {}),
+    ...(drillOffsetMm ? { drillOffsetMm } : {}),
     // Absent means plated, so only a KiCad `np_thru_hole` states anything:
     // every other pad keeps the exact shape it had before plating existed.
     ...(pad.type === "np_thru_hole" ? { plated: false } : {}),
@@ -731,7 +762,11 @@ export function buildFootprintPreviewFromParsed(
     includePadLayerNames: COPPER_PAD_LAYERS,
   });
 
-  return pasteSubPads.length > 0
-    ? { ...model, pads: [...model.pads, ...pasteSubPads] }
-    : model;
+  return {
+    ...model,
+    ...(pasteSubPads.length > 0
+      ? { pads: [...model.pads, ...pasteSubPads] }
+      : {}),
+    frame: KICAD_FOOTPRINT_FRAME_STAMP,
+  };
 }

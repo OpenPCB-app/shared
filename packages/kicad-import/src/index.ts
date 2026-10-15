@@ -22,6 +22,17 @@ export {
   buildFootprintPreviewFromParsed,
 } from "./build-preview-models.js";
 export {
+  KICAD_FOOTPRINT_TRANSFORM_VERSION,
+  KICAD_FOOTPRINT_FRAME_STAMP,
+  kicadPointToCanonical,
+  kicadPadToCanonical,
+} from "./frame.js";
+export {
+  compareFrameConversion,
+  type FrameConversionDelta,
+  type AllowedAddition,
+} from "./frame-delta.js";
+export {
   validateFootprintPads,
   validateSymbolPinsCoverFootprintPads,
   type FootprintWithPads,

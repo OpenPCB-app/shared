@@ -123,6 +123,8 @@ describe("buildFootprintPreviewFromParsed — layer allowlist", () => {
     expect(layersOf(model)).toEqual(new Set(["F.SilkS"]));
   });
 
+  // The courtyard line sits at KiCad y = +5 (Y-down, below the body), which
+  // the Y-up preview places at y = −5: it widens the bounds downward.
   test("courtyard widens the model bounds to the true component extent", () => {
     const withoutCourtyard = buildFootprintPreviewFromParsed(
       footprint([line("F.SilkS", 1)]),
@@ -130,8 +132,8 @@ describe("buildFootprintPreviewFromParsed — layer allowlist", () => {
     const withCourtyard = buildFootprintPreviewFromParsed(
       footprint([line("F.SilkS", 1), line("F.CrtYd", 5)]),
     );
-    expect(withCourtyard.bounds!.maxY).toBeGreaterThan(
-      withoutCourtyard.bounds!.maxY,
+    expect(withCourtyard.bounds!.minY).toBeLessThan(
+      withoutCourtyard.bounds!.minY,
     );
   });
 });
@@ -183,6 +185,11 @@ describe("buildFootprintPreviewFromParsed — slotted drills", () => {
   });
 });
 
+// KF1 §3.1.2 (KiCad `PAD::ShapePos`): the hole sits at the KiCad `at`, the
+// copper at `at + RotK(offset, α)`. In the Y-up preview, with N = diag(1, −1):
+// centerMm = N·at + R(α)·N·offset and drillOffsetMm = −N·offset. For the pad
+// below (at (0, 0), α = 0, offset (0.3, −0.1)): N·offset = (0.3, 0.1), so the
+// copper is at (0.3, 0.1) and the offset back to the hole is (−0.3, −0.1).
 describe("buildFootprintPreviewFromParsed — drill offsets", () => {
   test("emits drillOffsetMm for an off-centre drill", () => {
     const offset: ParsedPad = {
@@ -192,7 +199,8 @@ describe("buildFootprintPreviewFromParsed — drill offsets", () => {
       drillOffset: { x: 0.3, y: -0.1 },
     };
     const model = buildFootprintPreviewFromParsed(footprint([], [offset]));
-    expect(model.pads[0]!.drillOffsetMm).toEqual({ x: 0.3, y: -0.1 });
+    expect(model.pads[0]!.drillOffsetMm).toEqual({ x: -0.3, y: -0.1 });
+    expect(model.pads[0]!.centerMm).toEqual({ x: 0.3, y: 0.1 });
   });
 
   // `(offset 0 0)` is KiCad's default; emitting it would change the shape of
@@ -230,7 +238,7 @@ describe("buildFootprintPreviewFromParsed — drill offsets", () => {
       footprint([], [slottedOffset]),
     );
     expect(model.pads[0]!.drillSlotMm).toEqual({ widthMm: 1, heightMm: 3 });
-    expect(model.pads[0]!.drillOffsetMm).toEqual({ x: 0.3, y: -0.1 });
+    expect(model.pads[0]!.drillOffsetMm).toEqual({ x: -0.3, y: -0.1 });
   });
 });
 

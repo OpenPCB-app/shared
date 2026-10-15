@@ -34,8 +34,33 @@ export interface FootprintPreviewPad extends FootprintRenderSourcePad {
   readonly role?: "paste";
 }
 
+/**
+ * Producer stamp naming the coordinate frame a footprint preview is in.
+ *
+ * KiCad footprint files are Y-down (frame K); OpenPCB's canonical model is
+ * Y-up (frame C). Every footprint preview built by this package has been
+ * converted K→C exactly once (`kicadPointToCanonical` /
+ * `kicadPadToCanonical`), and says so here. It is a CLAIM made by the
+ * producer: a consumer that receives a model from an untrusted source must
+ * verify the geometry, not trust the stamp.
+ */
+export interface FootprintFrameStamp {
+  readonly frame: "openpcb-y-up";
+  readonly origin: "kicad-converted";
+  /** Bumped whenever the K→C conversion output changes for the same input. */
+  readonly transformVersion: number;
+  readonly tool: "@openpcb/kicad-import";
+}
+
 export interface FootprintPreviewModel extends FootprintRenderModel {
   readonly pads: readonly FootprintPreviewPad[];
+  /**
+   * Always present on models built by `@openpcb/kicad-import` ≥ 0.2.0. Every
+   * coordinate of the model (pad centres, drill offsets, graphics, label
+   * anchors, bounds) is in the canonical Y-up frame; angles are unchanged
+   * from the KiCad source (KiCad's visually-CCW angles are math-CCW in Y-up).
+   */
+  readonly frame: FootprintFrameStamp;
 }
 
 export interface ImportFileInput {
