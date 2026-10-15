@@ -1,8 +1,8 @@
 /**
  * Table-driven geometry qualification of every IPC-7351B preset at every
  * density: pad count, numbering, pitch, span, exposed pad, pairwise copper
- * gap — plus chip / SOT / QFN against their cited drawings and the KiCad
- * library.
+ * gap — plus chip / SOT / SOIC / QFN against their cited drawings and the
+ * KiCad library.
  */
 import { describe, expect, test } from "bun:test";
 import {
@@ -20,9 +20,15 @@ import {
   SOIC_FAMILY,
   SOT_FAMILY,
 } from "../src/ipc7351b/family-presets.js";
-import { CHIP_ADDITIONS, QFN_ADDITIONS, SOT_ADDITIONS } from "../src/ipc7351b/ipc-dimensions.js";
+import { CHIP_ADDITIONS, QFN_ADDITIONS, SOIC_ADDITIONS, SOT_ADDITIONS } from "../src/ipc7351b/ipc-dimensions.js";
 import { QFN_EP_MIN_GAP_MM, calculateQfnPads } from "../src/ipc7351b/pad-calculator.js";
-import { CHIP_DRAWINGS, QFN_DRAWINGS, SOT_DRAWINGS, nominal } from "./fixtures/ipc7351b-drawings.js";
+import {
+  CHIP_DRAWINGS,
+  QFN_DRAWINGS,
+  SOIC_DRAWINGS,
+  SOT_DRAWINGS,
+  nominal,
+} from "./fixtures/ipc7351b-drawings.js";
 import { KICAD_ORACLE, KICAD_ORACLE_TOLERANCE } from "./fixtures/ipc7351b-kicad-oracle.js";
 import {
   MIN_PAD_GAP_MM,
@@ -247,6 +253,70 @@ describe("SOT presets against their cited drawings (IPC-7351B nominal land)", ()
   }
 });
 
+describe("SOIC presets against MS-012 / MS-013 drawings (IPC-7351B nominal land)", () => {
+  test("every SOIC preset has a drawing and a KiCad oracle row", () => {
+    const labels = SOIC_FAMILY.sizes.map((size) => size.label).sort();
+    expect(Object.keys(SOIC_DRAWINGS).sort()).toEqual(labels);
+    for (const label of labels) expect(KICAD_ORACLE[label]).toBeDefined();
+  });
+  test("SOIC oracle tolerances stay under the hard ceilings (centre 0.15, size 0.60)", () => {
+    for (const size of SOIC_FAMILY.sizes) {
+      const tolerance = KICAD_ORACLE_TOLERANCE[size.label]!;
+      expect(tolerance.centerMm).toBeLessThanOrEqual(0.15);
+      expect(tolerance.sizeMm).toBeLessThanOrEqual(0.6);
+      expect(tolerance.largePadMm).toBeLessThanOrEqual(0.6);
+    }
+  });
+  for (const [label, drawing] of Object.entries(SOIC_DRAWINGS)) {
+    for (const density of DENSITIES) {
+      test(`${label} ${density} — ${drawing.source}`, () => {
+        const add = SOIC_ADDITIONS[density];
+        const span = nominal(drawing.span);
+        const foot = nominal(drawing.footLength);
+        const e = nominal(drawing.e);
+        const bodyWidth = nominal(drawing.bodyWidth);
+        const bodyLength = nominal(drawing.bodyLength);
+        const perSide = drawing.pins / 2;
+        const rowOffset = ((perSide - 1) * e) / 2;
+        const expectedX = span / 2 - foot / 2 + (add.toe - add.heel) / 2;
+        const expectedLength = foot + add.toe + add.heel;
+        const expectedWidth = nominal(drawing.leadWidth) + 2 * add.side;
+        const source = generateFootprint("soic", label, density).source;
+
+        // Pins 1…N/2 down the left row, N/2+1…N up the right row.
+        expect(numbers(source.pads)).toEqual(sequence(drawing.pins));
+        source.pads.forEach((pad, index) => {
+          const left = index < perSide;
+          const slot = left ? index : index - perSide;
+          expect(pad.centerMm.x).toBeCloseTo(left ? -expectedX : expectedX, 4);
+          expect(pad.centerMm.y).toBeCloseTo(left ? rowOffset - slot * e : -rowOffset + slot * e, 4);
+          expect(pad.rotationDeg).toBe(0);
+          expect(pad.widthMm).toBeCloseTo(expectedLength, 4);
+          expect(pad.heightMm).toBeCloseTo(expectedWidth, 4);
+          // The land covers the whole nominal foot (heel to tip).
+          const outer = Math.abs(pad.centerMm.x) + pad.widthMm / 2;
+          const inner = Math.abs(pad.centerMm.x) - pad.widthMm / 2;
+          expect(outer).toBeGreaterThanOrEqual(span / 2 - TOL);
+          expect(inner).toBeLessThanOrEqual(span / 2 - foot + TOL);
+        });
+
+        // Silk is the body outline E1 (x) × D (y); courtyard = outer pad edges + 2c.
+        const silk = rectOn(source.graphics, "F.SilkS");
+        expect(silk.width).toBeCloseTo(bodyWidth, 4);
+        expect(silk.height).toBeCloseTo(bodyLength, 4);
+        expect(silk.x + silk.width / 2).toBeCloseTo(0, 4);
+        expect(silk.y + silk.height / 2).toBeCloseTo(0, 4);
+        const outerEdge = Math.max(...source.pads.map((pad) => Math.abs(pad.centerMm.x) + pad.widthMm / 2));
+        const courtyard = rectOn(source.graphics, "F.CrtYd");
+        expect(courtyard.width).toBeCloseTo(2 * outerEdge + 2 * add.courtyard, 4);
+        expect(courtyard.height).toBeCloseTo(Math.max(bodyLength, perSide * e) + 2 * add.courtyard, 4);
+        expect(courtyard.x + courtyard.width / 2).toBeCloseTo(0, 4);
+        expect(courtyard.y + courtyard.height / 2).toBeCloseTo(0, 4);
+      });
+    }
+  }
+});
+
 describe("QFN presets against MO-220 drawings: lands and exposed pad", () => {
   for (const [label, drawing] of Object.entries(QFN_DRAWINGS)) {
     for (const density of DENSITIES) {
@@ -298,7 +368,7 @@ describe("QFN presets against MO-220 drawings: lands and exposed pad", () => {
   });
 });
 
-describe("chip / SOT / QFN against KiCad standard-library footprints (nominal density)", () => {
+describe("chip / SOT / SOIC / QFN against KiCad standard-library footprints (nominal density)", () => {
   for (const [label, oracle] of Object.entries(KICAD_ORACLE)) {
     const tolerance = KICAD_ORACLE_TOLERANCE[label]!;
     test(`${label} ≈ ${oracle.file} (centre ±${tolerance.centerMm}, size ±${tolerance.sizeMm}/${tolerance.largePadMm} mm)`, () => {

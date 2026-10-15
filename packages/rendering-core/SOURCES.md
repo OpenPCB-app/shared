@@ -1,6 +1,6 @@
 # IPC-7351B generator — dimension sources and comparison tolerances
 
-The chip, SOT and QFN presets in `src/ipc7351b/family-presets.ts` use nominal
+The chip, SOT, SOIC and QFN presets in `src/ipc7351b/family-presets.ts` use nominal
 package dimensions from the drawings below (nominal = midpoint of min/max, or
 the drawing's stated nominal/basic value). Lands are IPC-7351B nominal-dimension
 lands: the pad spans the lead foot plus the density's toe/heel/side additions
@@ -44,6 +44,45 @@ terminal from its inner end (minus heel) to the body end (plus toe). Silk is the
 body outline L × W, not yet clipped from the pads. Courtyard width = outer pad
 edges plus the courtyard excess on each side; courtyard height =
 max(W, land width) plus the courtyard excess on each side.
+
+## SOIC drawings
+
+**Tolerance flag (recorded before the SOIC presets were changed).** MS-012
+gives the foot length as L 0.40–1.27, so the nominal land uses L = 0.835. The
+KiCad oracle sizes its lands with the IPC-7351B equations over the min/max
+stack (kicad-footprint-generator
+`src/generators/tools/footprint/ipc_pad_size_calculators.py`, `ipc_gull_wing`:
+Gmin = Smax(RMS) − 2·J_H − √(C_S² + F² + P²), with S = E − 2L). That stack is
+dominated by the 0.87 mm L range and pulls KiCad's heel edge inward, so the two
+land centres differ by ≈ 0.108 mm on SOIC-8/14/16. Rounded up to 0.05 that is
+0.15, the hard centre ceiling, with only ≈ 0.042 mm of headroom. A
+transcription that moves the delta above 0.15 is a stop, not a reason to
+widen. KiCad uses the same IPC-7351B Table 3-2 gull-wing additions as this
+generator (pitch > 0.625: toe 0.35, heel 0.35, side 0.03 at nominal;
+`src/kilibs/config/ipc_configs/ipc_7351b.yaml`), so the delta is the tolerance
+stack alone. The observed deltas are in the comparison section below.
+
+| Preset   | Standard       | Drawing                         | e        | E           | L         | b         | E1        | D           |
+| -------- | -------------- | ------------------------------- | -------- | ----------- | --------- | --------- | --------- | ----------- |
+| SOIC-8   | JEDEC MS-012AA | Analog Devices R-8 (012407-A)   | 1.27 BSC | 5.80–6.20   | 0.40–1.27 | 0.31–0.51 | 3.80–4.00 | 4.80–5.00   |
+| SOIC-14  | JEDEC MS-012AB | Analog Devices R-14 (060606-A)  | 1.27 BSC | 5.80–6.20   | 0.40–1.27 | 0.31–0.51 | 3.80–4.00 | 8.55–8.75   |
+| SOIC-16  | JEDEC MS-012AC | Analog Devices R-16 (060606-A)  | 1.27 BSC | 5.80–6.20   | 0.40–1.27 | 0.31–0.51 | 3.80–4.00 | 9.80–10.00  |
+| SOIC-28W | JEDEC MS-013AE | Analog Devices RW-28 (060706-A) | 1.27 BSC | 10.00–10.65 | 0.40–1.27 | 0.31–0.51 | 7.40–7.60 | 17.70–18.10 |
+
+These are the drawings KiCad's `SOIC-*` footprints cite in their `descr`.
+analog.com refused the download on 2026-10-15; the values above were read from
+web.archive.org copies of the cited URLs (sha256 of the PDFs: R-8
+`83932339…f28fcaf`, R-14 `3698362e…5635439`, R-16 `e58aa7b3…e043647`, RW-28
+`94d6b9f4…b380182`). E is the lead span tip to tip, E1 the body width, D the
+body length, b the lead width and L the foot length.
+
+Land, per pad: length L + toe + heel, width b + 2·side, centre
+±(E/2 − L/2 + (toe − heel)/2) on X, no rotation. The land therefore spans the
+foot from its heel (minus the heel addition) to its tip (plus the toe
+addition). Pins 1…N/2 run down the left row and N/2+1…N up the right row. Silk
+is the body outline E1 × D, not yet clipped from the pads. Courtyard width =
+outer pad edges plus the courtyard excess on each side; courtyard height =
+max(D, pins per side × e) plus the courtyard excess on each side.
 
 ## Package drawings
 
@@ -92,6 +131,10 @@ compared at the `nominal` density with KiCad's Y axis negated:
 | SOT-23-6 | `Package_TO_SOT_SMD/SOT-23-6`                     | 0.10   | 0.50        | —                  |
 | SOT-223  | `Package_TO_SOT_SMD/SOT-223`                      | 0.10   | 0.75        | 0.75               |
 | SOT-323  | `Package_TO_SOT_SMD/SOT-323_SC-70`                | 0.10   | 0.50        | —                  |
+| SOIC-8   | `Package_SO/SOIC-8_3.9x4.9mm_P1.27mm`             | 0.15   | 0.55        | —                  |
+| SOIC-14  | `Package_SO/SOIC-14_3.9x8.7mm_P1.27mm`            | 0.15   | 0.55        | —                  |
+| SOIC-16  | `Package_SO/SOIC-16_3.9x9.9mm_P1.27mm`            | 0.15   | 0.55        | —                  |
+| SOIC-28W | `Package_SO/SOIC-28W_7.5x17.9mm_P1.27mm`          | 0.15   | 0.55        | —                  |
 | QFN-16   | `Package_DFN_QFN/QFN-16-1EP_3x3mm_P0.5mm_EP1.7x1.7mm`   | 0.10 | 0.50 | 0.40 |
 | QFN-20   | `Package_DFN_QFN/QFN-20-1EP_4x4mm_P0.5mm_EP2.5x2.5mm`   | 0.10 | 0.50 | 0.40 |
 | QFN-24   | `Package_DFN_QFN/QFN-24-1EP_4x4mm_P0.5mm_EP2.15x2.15mm` | 0.10 | 0.50 | 0.40 |
@@ -132,8 +175,31 @@ table (toe 0.35 nominal) to every size, while KiCad's IPC-7351B config
 the density addition tables is out of scope here. The size deltas come from
 KiCad's min/max tolerance stack, as for SOT and QFN.
 
+SOIC family: two deltas exceed the starting tolerances, so the family
+tolerance is the larger of each, rounded up to 0.05: centre 0.15 (the hard
+ceiling) and size 0.55 (ceiling 0.60). Observed at commit time, nominal density
+(pad rows sit on the drawing pitch, so every Δ y is 0):
+
+| Preset   | Generator \|x\|, size | KiCad \|x\|, size | Δ centre | Δ size (x, y) |
+| -------- | --------------------- | ----------------- | -------- | ------------- |
+| SOIC-8   | 2.5825, 1.535 × 0.47  | 2.475, 1.95 × 0.6 | 0.1075   | 0.415, 0.130  |
+| SOIC-14  | 2.5825, 1.535 × 0.47  | 2.475, 1.95 × 0.6 | 0.1075   | 0.415, 0.130  |
+| SOIC-16  | 2.5825, 1.535 × 0.47  | 2.475, 1.95 × 0.6 | 0.1075   | 0.415, 0.130  |
+| SOIC-28W | 4.745, 1.535 × 0.47   | 4.65, 2.05 × 0.6  | 0.095    | 0.515, 0.130  |
+
+- **Centre, SOIC-8/14/16: 0.1075**, headroom 0.0425 to the 0.15 ceiling. Cause:
+  the tolerance flag above. KiCad's heel edge sits 0.315 further inward
+  (inner edge 1.50 against 1.815 here); its toe edge sits 0.10 further out
+  (3.45 against 3.35).
+- **Size, SOIC-28W: 0.515** (land length). Cause: the same tolerance stack at
+  both ends. KiCad's Zmax = Emin + 2·J_T + √(C_L² + F² + P²) puts its toe edge
+  near the maximum span of RW-28's wide range (E 10.00–10.65): 5.675 against
+  5.5125 here (+0.1625). Its Gmin pulls the heel edge in by the L range: 3.625
+  against 3.9775 here (+0.3525). The nominal land is L + toe + heel = 1.535 for
+  every SOIC.
+
 ## Not covered here
 
-- SOIC and QFP presets are checked for count, numbering, pitch, span and
-  copper gap only; they have no cited drawings and no KiCad comparison yet.
+- QFP presets are checked for count, numbering, pitch, span and copper gap
+  only; they have no cited drawings and no KiCad comparison yet.
 - Silkscreen is still the nominal body rectangle and is not clipped from pads.

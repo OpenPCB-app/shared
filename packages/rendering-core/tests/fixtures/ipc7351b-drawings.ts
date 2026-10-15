@@ -144,6 +144,66 @@ export const SOT_DRAWINGS: Readonly<Record<string, SotDrawing>> = {
   },
 };
 
+export interface SoicDrawing {
+  readonly source: string;
+  readonly pins: number;
+  /** Lead pitch e. */
+  readonly e: Dim;
+  /** Lead span E, tip to tip. */
+  readonly span: Dim;
+  /** Foot length L. */
+  readonly footLength: Dim;
+  /** Lead width b. */
+  readonly leadWidth: Dim;
+  /** Body width E1 (across the rows). */
+  readonly bodyWidth: Dim;
+  /** Body length D (along the rows). */
+  readonly bodyLength: Dim;
+}
+
+export const SOIC_DRAWINGS: Readonly<Record<string, SoicDrawing>> = {
+  "SOIC-8": {
+    source: "ADI R-8 (012407-A), JEDEC MS-012-AA",
+    pins: 8,
+    e: 1.27,
+    span: [5.8, 6.2],
+    footLength: [0.4, 1.27],
+    leadWidth: [0.31, 0.51],
+    bodyWidth: [3.8, 4.0],
+    bodyLength: [4.8, 5.0],
+  },
+  "SOIC-14": {
+    source: "ADI R-14 (060606-A), JEDEC MS-012-AB",
+    pins: 14,
+    e: 1.27,
+    span: [5.8, 6.2],
+    footLength: [0.4, 1.27],
+    leadWidth: [0.31, 0.51],
+    bodyWidth: [3.8, 4.0],
+    bodyLength: [8.55, 8.75],
+  },
+  "SOIC-16": {
+    source: "ADI R-16 (060606-A), JEDEC MS-012-AC",
+    pins: 16,
+    e: 1.27,
+    span: [5.8, 6.2],
+    footLength: [0.4, 1.27],
+    leadWidth: [0.31, 0.51],
+    bodyWidth: [3.8, 4.0],
+    bodyLength: [9.8, 10.0],
+  },
+  "SOIC-28W": {
+    source: "ADI RW-28 (060706-A), JEDEC MS-013-AE",
+    pins: 28,
+    e: 1.27,
+    span: [10.0, 10.65],
+    footLength: [0.4, 1.27],
+    leadWidth: [0.31, 0.51],
+    bodyWidth: [7.4, 7.6],
+    bodyLength: [17.7, 18.1],
+  },
+};
+
 export interface QfnDrawing {
   readonly source: string;
   readonly pins: number;

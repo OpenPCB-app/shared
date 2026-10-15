@@ -173,20 +173,25 @@ export function calculateChipPads(
 export interface GullWingDualParams {
   /** Number of pins (must be even for dual-row) */
   pinCount: number;
-  /** Pin pitch (center-to-center along row, mm) */
+  /** Lead pitch e (center-to-center along a row, nominal mm) */
   pitchMm: number;
-  /** Span (center-to-center between opposite rows, mm) */
-  spanMm: number;
-  /** Terminal length (lead foot length, mm) */
+  /** Overall lead span E, tip to tip across the rows (nominal mm) */
+  leadSpanMm: number;
+  /** Foot length L (nominal mm) */
   terminalLengthMm: number;
-  /** Terminal width (lead width, mm) */
+  /** Lead width b (nominal mm) */
   terminalWidthMm: number;
-  /** Body width (between rows, mm) — for silkscreen */
+  /** Body width E1, across the rows (nominal mm) — for silkscreen */
   bodyWidthMm: number;
-  /** Body length (along rows, mm) — for silkscreen */
+  /** Body length D, along the rows (nominal mm) — for silkscreen */
   bodyLengthMm: number;
 }
 
+/**
+ * IPC-7351B nominal land: the pad runs from the lead heel minus the heel
+ * addition to the lead tip plus the toe addition, so its centre sits at
+ * E/2 − L/2 + (toe − heel)/2 and its length is L + toe + heel.
+ */
 export function calculateGullWingDualPads(
   params: GullWingDualParams,
   additions: SolderFilletAdditions,
@@ -194,7 +199,7 @@ export function calculateGullWingDualPads(
   const {
     pinCount,
     pitchMm,
-    spanMm,
+    leadSpanMm,
     terminalLengthMm,
     terminalWidthMm,
     bodyWidthMm,
@@ -207,12 +212,14 @@ export function calculateGullWingDualPads(
 
   const pinsPerSide = pinCount / 2;
   const padWidth = roundTo(terminalWidthMm + 2 * additions.side, 4);
-  const padHeight = roundTo(
+  const padLength = roundTo(
     terminalLengthMm + additions.toe + additions.heel,
     4,
   );
   const padCenterX = roundTo(
-    spanMm / 2 + (additions.toe - additions.heel) / 2,
+    leadSpanMm / 2 -
+      terminalLengthMm / 2 +
+      (additions.toe - additions.heel) / 2,
     4,
   );
 
@@ -227,7 +234,7 @@ export function calculateGullWingDualPads(
       number: String(i + 1),
       shape: "rect",
       centerMm: { x: -padCenterX, y },
-      widthMm: padHeight,
+      widthMm: padLength,
       heightMm: padWidth,
       rotationDeg: 0,
       layer: "F.Cu",
@@ -242,14 +249,17 @@ export function calculateGullWingDualPads(
       number: String(pinsPerSide + i + 1),
       shape: "rect",
       centerMm: { x: padCenterX, y },
-      widthMm: padHeight,
+      widthMm: padLength,
       heightMm: padWidth,
       rotationDeg: 0,
       layer: "F.Cu",
     });
   }
 
-  const courtW = roundTo(spanMm + padHeight + 2 * additions.courtyard, 4);
+  const courtW = roundTo(
+    2 * padCenterX + padLength + 2 * additions.courtyard,
+    4,
+  );
   const courtH = roundTo(
     Math.max(bodyLengthMm, pinsPerSide * pitchMm) + 2 * additions.courtyard,
     4,

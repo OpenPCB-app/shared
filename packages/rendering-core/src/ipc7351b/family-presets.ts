@@ -206,19 +206,11 @@ export const SOT_FAMILY: PackageFamilyDef<SotParams> = {
 };
 
 // ── SOIC (Small Outline IC) ─────────────────────────────────────────
-
-function soicParams(pinCount: number): GullWingDualParams {
-  const isWide = pinCount > 16;
-  return {
-    pinCount,
-    pitchMm: 1.27,
-    spanMm: isWide ? 10.3 : 6.0,
-    terminalLengthMm: isWide ? 0.6 : 0.5,
-    terminalWidthMm: 0.4,
-    bodyWidthMm: isWide ? 7.5 : 3.9,
-    bodyLengthMm: (pinCount / 2) * 1.27 + 0.5,
-  };
-}
+//
+// Nominal = midpoint of the min/max in the cited drawing (e is basic).
+// Fields: e = pitchMm, E (tip to tip) = leadSpanMm, L = terminalLengthMm,
+// b = terminalWidthMm, E1 = bodyWidthMm, D = bodyLengthMm. Sources and the
+// KiCad comparison tolerances: SOURCES.md.
 
 export const SOIC_FAMILY: PackageFamilyDef<GullWingDualParams> = {
   id: "soic",
@@ -226,28 +218,64 @@ export const SOIC_FAMILY: PackageFamilyDef<GullWingDualParams> = {
   subtitle: "Small Outline IC",
   sizes: [
     {
+      // JEDEC MS-012AA — Analog Devices R-8 (012407-A).
       label: "SOIC-8",
       metric: null,
       subtitle: "8 pins, 1.27 mm pitch",
-      params: soicParams(8),
+      params: {
+        pinCount: 8,
+        pitchMm: 1.27,
+        leadSpanMm: 6.0,
+        terminalLengthMm: 0.835,
+        terminalWidthMm: 0.41,
+        bodyWidthMm: 3.9,
+        bodyLengthMm: 4.9,
+      },
     },
     {
+      // JEDEC MS-012AB — Analog Devices R-14 (060606-A).
       label: "SOIC-14",
       metric: null,
       subtitle: "14 pins, 1.27 mm pitch",
-      params: soicParams(14),
+      params: {
+        pinCount: 14,
+        pitchMm: 1.27,
+        leadSpanMm: 6.0,
+        terminalLengthMm: 0.835,
+        terminalWidthMm: 0.41,
+        bodyWidthMm: 3.9,
+        bodyLengthMm: 8.65,
+      },
     },
     {
+      // JEDEC MS-012AC — Analog Devices R-16 (060606-A).
       label: "SOIC-16",
       metric: null,
       subtitle: "16 pins, 1.27 mm pitch",
-      params: soicParams(16),
+      params: {
+        pinCount: 16,
+        pitchMm: 1.27,
+        leadSpanMm: 6.0,
+        terminalLengthMm: 0.835,
+        terminalWidthMm: 0.41,
+        bodyWidthMm: 3.9,
+        bodyLengthMm: 9.9,
+      },
     },
     {
+      // JEDEC MS-013AE — Analog Devices RW-28 (060706-A).
       label: "SOIC-28W",
       metric: null,
       subtitle: "28 pins, wide body",
-      params: soicParams(28),
+      params: {
+        pinCount: 28,
+        pitchMm: 1.27,
+        leadSpanMm: 10.325,
+        terminalLengthMm: 0.835,
+        terminalWidthMm: 0.41,
+        bodyWidthMm: 7.5,
+        bodyLengthMm: 17.9,
+      },
     },
   ],
 };
